@@ -1,7 +1,8 @@
 var firebase    = require("firebase"),
     chalk       = require("chalk"),
     util        = require("gulp-util"),
-    yargs       = require('yargs');
+    yargs       = require('yargs'),
+    fbConfig    = require("../firebase-config");
 
 module.exports = function(typeSlug) {
 
@@ -12,16 +13,9 @@ module.exports = function(typeSlug) {
   util.log(chalk.magenta("compile.js"),typeSlug);
 
   // Initialize Firebase.
-  var config = {
-    apiKey: "AIzaSyCNApUl12tcTgebkINcUa3MiNHCYFkhjyQ",
-    authDomain: "project-1638673378742311717.firebaseapp.com",
-    databaseURL: "https://project-1638673378742311717.firebaseio.com",
-    storageBucket: "project-1638673378742311717.appspot.com",
-    messagingSenderId: "149388472792"
-  };
-  firebase.initializeApp(config);
+  firebase.initializeApp(fbConfig.initConfig);
 
-  return firebase.auth().signInWithEmailAndPassword("songcharts@bienv.com", "Raichu12")
+  return firebase.auth().signInWithEmailAndPassword(fbConfig.email,fbConfig.password)
 
   .then(function() {
      return require("./compilers/compile-"+typeSlug)(yargs)
