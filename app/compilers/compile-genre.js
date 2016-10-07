@@ -1,74 +1,82 @@
-var firebase    = require("firebase"),
-    chalk       = require("chalk"),
+var chalk       = require("chalk"),
     util        = require("gulp-util");
     numeral     = require("numeral"),
 
-    // meta        = require('../meta'),
     scoring     = require('../scoring');
 
-// entities: array of entities of the type
-module.exports = function() {
+var _inputs = {
+  "genres": "genres/raw",
+  "artistsByGenre": "artists/by-genre",
+  "songsByGenre": "songs/by-genre",
+  "artists": "artists/compiled"
+}
+
+var _outputs = [
+  ["entities", "genres/compiled"],
+  ["titles", "genres/titles"],
+  ["errors", "genres/errors"]
+];
+
+function _transform(snapshot) {
+
   util.log(chalk.magenta("compile-genre.js"));
 
-  var db = firebase.database();
+  // var inputData = snapshot.reduce(function(s) {
+  //   return s.val() || {};
+  // })
 
-  return firebase.Promise.all([
-    db.ref("genres/raw").once('value'),
-    db.ref("artists/by-genre").once('value'),
-    db.ref("songs/by-genre").once('value'),
-    db.ref("artists/compiled").once('value')
-  ])
+  var genres = snapshot[0].val() || {};
+  var artistsByGenre = snapshot[1].val() || {};
+  var songsByGenre = snapshot[2].val() || {};
+  var artists = snapshot[3].val() || {};
 
-  .then(function(snapshot) {
+  entities = {};
+  titles = {};
+  errors = [];
 
-    var genres = snapshot[0].val() || {};
-    var artistsByGenre = snapshot[1].val() || {};
-    var songsByGenre = snapshot[2].val() || {};
-    var artists = snapshot[3].val() || {};
+  for (var slug in genres) {
+    var entity = genres[slug];
 
-    entities = {};
-    titles = {};
-    errors = [];
+    titles[slug] = entity.title;
 
-    for (var slug in genres) {
-      var entity = genres[slug];
+    entity.artists =
+      (artistsByGenre[slug] || [])
+      .map(function(a) { return ""+a.instanceSlug; })
+      .reduce(function(outbound,key) {
+        outbound[key] = artists[key]; return outbound;
+      },{});
 
-      titles[slug] = entity.title;
+    // entity.songs = scoring.sortAndRank(songsByGenre[entity.instanceSlug]) || [];
+    // scoring.scoreCollection.call(entity);
 
-      entity.artists =
-        (artistsByGenre[slug] || [])
-        .map(function(a) { return ""+a.instanceSlug; })
-        .reduce(function(outbound,key) {
-          outbound[key] = artists[key]; return outbound;
-        },{});
+    numeral.zeroFormat("");
 
-      // entity.songs = scoring.sortAndRank(songsByGenre[entity.instanceSlug]) || [];
-      // scoring.scoreCollection.call(entity);
+    util.log(
+      chalk.blue(entity.instanceSlug),
+      entity.title,
+      chalk.gray(numeral((entity.songs || []).length).format("0")),
+      chalk.gray(numeral((entity.artists || []).length).format("0")),
+      chalk.gray(numeral(entity.score || 0).format("0.00")),
+      chalk.gray(numeral(entity.songAdjustedAverage || 0).format("0.00")),
+      chalk.gray(numeral(entity.artistAdjustedAverage || 0).format("0.00"))
+    );
 
-      // numeral.zeroFormat("");
-      //
-      // util.log(
-      //   chalk.blue(entity.instanceSlug),
-      //   entity.title,
-      //   chalk.gray(numeral(entity.songs.length).format("0")),
-      //   chalk.gray(numeral(entity.artists.length).format("0")),
-      //   chalk.gray(numeral(entity.score || 0).format("0.00")),
-      //   chalk.gray(numeral(entity.songAdjustedAverage || 0).format("0.00")),
-      //   chalk.gray(numeral(entity.artistAdjustedAverage || 0).format("0.00"))
-      // );
-      //
-      entities[slug] = entity;
+    entities[slug] = entity;
 
-    }
+  }
 
-    db.ref("genres/compiled").set(entities);
-    db.ref("genres/titles").set(titles);
-    db.ref("genres/errors").set(errors);
+  return {
+    "genres/compiled": entities,
+    "genres/titles": titles,
+    "genres/errors": errors
+  }
 
-    return {
-      entityCount: Object.keys(entities).length,
-      errorCount: errors.length
-    };
+}
 
-  });
-};
+module.exports = {
+  singular: "genre",
+  plural: "genres",
+  inputs: _inputs,
+  outputs: _outputs,
+  transform: _transform
+}

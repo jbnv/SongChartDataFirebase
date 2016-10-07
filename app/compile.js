@@ -18,11 +18,22 @@ module.exports = function(typeSlug) {
   return firebase.auth().signInWithEmailAndPassword(fbConfig.email,fbConfig.password)
 
   .then(function() {
-     return require("./compilers/compile-"+typeSlug)(yargs)
-     .then(function(results) {
-       util.log("Compiled",chalk.green(results.entityCount),"entities with",chalk.red(results.errorCount),"errors.");
-       return Promise.resolve(true);
-     })
+    var typeModule = require("./compilers/compile-"+typeSlug);
+    var data = require('./data')(firebase);
+
+    return data.getBatch(typeModule.inputs)
+    .then(typeModule.transform)
+    .then(function(outputs) {
+
+      data.setBatch(outputs);
+
+      var entityCount = Object.keys(entities).length;
+      var errorCount = errors.length;
+
+      util.log("Compiled",chalk.green(entityCount),"entities with",chalk.red(errorCount),"errors.");
+      return Promise.resolve(true);
+
+    })
   })
   .then(function() {
     util.log("compile.js DONE");
