@@ -166,6 +166,14 @@ Array.prototype.normalize = function(descentWeeks) {
   return transformed;
 };
 
+Array.prototype.toObject = function(keyFn,valueFn) {
+  return this.reduce(function(prev,cur) {
+    prev[keyFn(cur)] = valueFn(cur);
+    return prev;
+  }, {});
+};
+
+////////////////////////////////////////////////////////////////////////////////
 
 if (!String.prototype.startsWith) {
     String.prototype.startsWith = function(searchString, position){
