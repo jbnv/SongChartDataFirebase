@@ -1,5 +1,4 @@
-var firebase    = require("firebase"),
-    chalk       = require("chalk"),
+var chalk       = require("chalk"),
     util        = require("gulp-util"),
 
     typeSlug = process.argv[2];
@@ -7,10 +6,12 @@ var firebase    = require("firebase"),
 require('./app/compile')(typeSlug)
 .then(function() {
   util.log("DONE");
+  return true;
 })
 .catch(function (error) {
   util.log(
     chalk.red("ERROR"),
     error
   );
+  return false;
 });
