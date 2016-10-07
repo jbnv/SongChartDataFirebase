@@ -16,7 +16,9 @@ if (!Array.prototype.any) {
 if (!Array.prototype.adjustedAverage) {
   Array.prototype.adjustedAverage = function() {
     if (this.length == 0) return null;
-    return (this.sum()/Math.sqrt(this.length));
+    var outbound = this.sum()/Math.sqrt(this.length);
+    if (isNaN(outbound)) return null;
+    return outbound;
   }
 }
 
