@@ -1,27 +1,37 @@
 var chalk       = require("chalk"),
-    fs          = require("fs"),
+    util        = require("gulp-util");
     numeral     = require("numeral"),
-    path        = require("path"),
-    q           = require("q"),
-    util        = require("gulp-util"),
 
-    readEntity  = require("../../lib/fs").readEntity,
-
-    meta        = require('../meta'),
     scoring     = require('../scoring');
 
-require("../polyfill");
+    require("../polyfill");
 
-// entities: array of entities of the type
-module.exports = function(yargs,entities) {
+var _inputs = {
+  "playlists": "playlists/raw",
+  "songs":"songs/compiled",
+  "songsByPlaylist": "songs/by-playlist"
+}
+
+var _outputs = [
+  ["entities", "playlists/compiled"],
+  ["titles", "playlists/titles"],
+  ["errors", "playlists/errors"]
+];
+
+function _transform(snapshot) {
+
   util.log(chalk.magenta("compile-playlist.js"));
 
+  var playlists = snapshot[0].val() || {};
+  var songs = snapshot[1].val() || {};
+  var songsByPlaylist = snapshot[2].val() || {};
+
+  entities = {};
   titles = {};
+  errors = [];
 
-  var songs = readEntity(path.join("compiled","song","by-playlist"));
-
-  entities.forEach(function(entity) {
-    var slug = entity.instanceSlug;
+  for (var slug in playlists) {
+    var entity = playlists[slug];
 
     titles[slug] = entity.title;
     entity.songs = scoring.sortAndRank(songs[entity.instanceSlug]) || [];
@@ -41,7 +51,7 @@ module.exports = function(yargs,entities) {
     if (entity.filter) {
       // Check the keys on the filter object to determine what we are doing with it.
       // For now, assume that the object has only one key.
-      Object.keys(entity.filter).forEach(function(key) {
+      for (var key in entity.filter) {
         var pattern = entity.filter[key];
         var exp = new RegExp(pattern);
 
@@ -63,10 +73,12 @@ module.exports = function(yargs,entities) {
             }
           }
         }
-      });
+      }
     }
 
-    meta.getSongs().forEach(filter);
+    for (var songSlug in songs) {
+      filter(songs[songSlug]);
+    }
     entity.songs = scoring.sortAndRank(entity.songs);
     scoring.scoreCollection.call(entity);
 
@@ -80,10 +92,22 @@ module.exports = function(yargs,entities) {
       chalk.gray(numeral(entity.songAdjustedAverage || 0).format("0.00"))
     );
 
-  });
+    entities[slug] = entity;
+
+  }
 
   return {
-    "all": entities,
-    "titles": titles
+    "playlists/compiled": entities,
+    "playlists/titles": titles,
+    "playlists/errors": errors
   }
+
+}
+
+module.exports = {
+  singular: "playlist",
+  plural: "playlists",
+  inputs: _inputs,
+  outputs: _outputs,
+  transform: _transform
 }

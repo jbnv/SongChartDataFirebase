@@ -1,42 +1,67 @@
 var chalk       = require("chalk"),
-    fs          = require("fs"),
+    util        = require("gulp-util");
     numeral     = require("numeral"),
-    path        = require("path"),
-    q           = require("q"),
-    util        = require("gulp-util"),
 
-    readEntity  = require("../../lib/fs").readEntity,
-
-    meta        = require('../meta'),
     scoring     = require('../scoring');
 
-// entities: array of entities of the type
-module.exports = function(yargs,entities) {
+    require("../polyfill");
+
+var _inputs = {
+  "sources": "sources/raw",
+  "songsBySource": "songs/by-source"
+}
+
+var _outputs = [
+  ["entities", "sources/compiled"],
+  ["titles", "sources/titles"],
+  ["errors", "sources/errors"]
+];
+
+function _transform(snapshot) {
+
   util.log(chalk.magenta("compile-source.js"));
 
-    titles = {};
-    var songs = readEntity(path.join("compiled","song","by-source"));
+  var sources = snapshot[0].val() || {};
+  var songsBySource = snapshot[1].val() || {};
 
-    entities.forEach(function(entity) {
-      var slug = entity.instanceSlug;
+  entities = {};
+  titles = {};
+  errors = [];
 
-      entity.songs = scoring.sortAndRank(songs[entity.instanceSlug]) || [];
-      scoring.scoreCollection.call(entity);
+  for (var slug in sources) {
+    var entity = sources[slug];
 
-      numeral.zeroFormat("");
+    titles[slug] = entity.title;
 
-      util.log(
-        chalk.blue(entity.instanceSlug),
-        entity.title,
-        chalk.gray(numeral(entity.songs.length).format("0")),
-        chalk.gray(numeral(entity.score || 0).format("0.00")),
-        chalk.gray(numeral(entity.songAdjustedAverage || 0).format("0.00"))
-      );
+    entity.songs = scoring.sortAndRank(songsBySource[slug]) || [];
+    scoring.scoreCollection.call(entity);
 
-    });
+    numeral.zeroFormat("");
+
+    util.log(
+      chalk.blue(entity.instanceSlug),
+      entity.title,
+      chalk.gray(numeral(entity.songs.length).format("0")),
+      chalk.gray(numeral(entity.score || 0).format("0.00")),
+      chalk.gray(numeral(entity.songAdjustedAverage || 0).format("0.00"))
+    );
+
+    entities[slug] = entity;
+
+  }
 
   return {
-    "all": entities,
-    "titles": titles,
+    "sources/compiled": entities,
+    "sources/titles": titles,
+    "sources/errors": errors
   }
+
+}
+
+module.exports = {
+  singular: "source",
+  plural: "sources",
+  inputs: _inputs,
+  outputs: _outputs,
+  transform: _transform
 }

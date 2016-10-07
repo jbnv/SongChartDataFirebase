@@ -1,43 +1,45 @@
-var firebase    = require("firebase"),
-    chalk       = require("chalk"),
-    util        = require("gulp-util"),
+var chalk       = require("chalk"),
+    util        = require("gulp-util");
     numeral     = require("numeral"),
 
-    meta        = require('../meta'),
     scoring     = require('../scoring');
 
-// entities: array of entities of the type
-module.exports = function() {
+    require("../polyfill");
+
+var _inputs = {
+  "artists": "artists/raw",
+  "songsByArtist": "songs/by-artist",
+  "tagsForArtist": "tags/for-artist",
+  "songs": "songs/compiled",
+  "tags": "tags/raw",
+  "roles": "roles/raw"
+}
+
+var _outputs = [
+  ["entities", "artists/compiled"],
+  ["titles", "artists/titles"],
+  ["errors", "artists/errors"]
+];
+
+function _transform(snapshot) {
+
   util.log(chalk.magenta("compile-artist.js"));
 
-  var db = firebase.database();
+  var artists = snapshot[0].val() || {};
+  var songsByArtist = snapshot[1].val() || {};
+  var tagsForArtist = snapshot[2].val() || {};
+  var allSongs = snapshot[3].val() || {};
+  var allTags = snapshot[4].val() || {};
+  var allRoles = snapshot[5].val() || {};
+  var allArtistTypes = require("../models/artist-types") || {};
 
-  return firebase.Promise.all([
-    db.ref("artists/raw").once('value'),
-    db.ref("songs/by-artist").once('value'),
-    db.ref("tags/for-artist").once('value'),
-    db.ref("songs/compiled").once('value'),
-    db.ref("tags/raw").once('value'),
-    db.ref("roles/raw").once('value')
-  ])
-
-  .then(function(snapshot) {
-
-    var artists = snapshot[0].val() || {};
-    var songsByArtist = snapshot[1].val() || {};
-    var tagsForArtist = snapshot[2].val() || {};
-    var allSongs = snapshot[3].val() || {};
-    var allTags = snapshot[4].val() || {};
-    var allRoles = snapshot[5].val() || {};
-    var allArtistTypes = require("../models/artist-types") || {};
-
-    entities = {};
-    titles = {};
-    errors = [];
-    roles = {};
-    genres = {};
-    origins = {};
-    tags = {};
+  entities = {};
+  titles = {};
+  errors = [];
+  roles = {};
+  genres = {};
+  origins = {};
+  tags = {};
 
     for (var slug in artists) {
       var entity = artists[slug];
