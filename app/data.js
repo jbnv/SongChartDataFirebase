@@ -1,6 +1,8 @@
 var Promise = require("firebase").Promise,
     isArray = require("is-array"),
-    isFunction = require("is-function");
+    isFunction = require("is-function"),
+
+    transform   = require('./transform');
 
 module.exports = function(firebase) {
 
@@ -107,30 +109,17 @@ module.exports = function(firebase) {
     }));
   }
 
-  function _expand(trueArray,route) {
+  // trueArray: { : true }
+  // source: string
+  function _expand(trueArray,source) {
+    if (!trueArray) return null;
+    if (!source) return null;
     return db
       .ref(route+'/raw/')
       .once('value')
       .then(function(snapshot) {
-        var data = snapshot.val();
-        var outbound = {};
-        for (var key in trueArray) {
-          outbound[key] = data[key];
-        }
-        return outbound;
+        return transform.expand(trueArray,snapshot.val());
       });
-  }
-
-  function _byList(outbound,itemSlug,collection) {
-    if (!outbound) outbound = {};
-    if (collection) {
-      for (var key in collection) {
-        if (!outbound[key]) outbound[key] = {};
-        outbound[key][itemSlug] = true;
-      }
-      return outbound;
-    }
-
   }
 
   // inputs: { key: path }
@@ -147,6 +136,7 @@ module.exports = function(firebase) {
     for (var path in outputs) {
       db.ref(path).set(outputs[path]);
     }
+    return Promise.resolve(outputs);
   }
 
   ////////////////////////////////////////////////////////////
@@ -173,7 +163,6 @@ module.exports = function(firebase) {
     setBatch: _setBatch,
 
     lookupEntities: _lookupEntities,
-    byList: _byList,
     expand: _expand
 
   }
