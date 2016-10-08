@@ -23,38 +23,38 @@ exports.sortAndRank = _sortAndRank;
 // Peak score (P): Higher score (lower number) is better.
 // Duration (M): More is better.
 
-exports.score = function(song,scoringOptions) {
+exports.score = function(inbound,scoringOptions) {
 
-  function addMessage(msg) {
-
-  }
+  var outbound = {};
 
 	if (!scoringOptions) { scoringOptions = {}; }
 
-  if (!song.peak)  { return; }
-  song.peak = parseFloat(song.peak);
+  if (!inbound.peak)  { return outbound; }
+  outbound.peak = parseFloat(inbound.peak);
 
-  var ascentWeeks = song["ascent-weeks"] || 0;
-  var descentWeeks = song["descent-weeks"] || 0;
+  var ascentWeeks = parseFloat(inbound["ascent-weeks"] || 0);
+  var descentWeeks = parseFloat(inbound["descent-weeks"] || 0);
+  outbound.ascentWeeks = ascentWeeks;
+  outbound.descentWeeks = descentWeeks;
 
-  song.score = (2/3) * song.peak * (ascentWeeks+descentWeeks);
+  outbound.score = (2/3) * outbound.peak * (ascentWeeks+descentWeeks);
 
-	song.duration = Math.ceil(
+	outbound.duration = Math.ceil(
     (ascentWeeks+descentWeeks) * 7 / 30.4375
   );
 
-  song.denominator = function(w) {
+  outbound.denominator = function(w) {
     return w < ascentWeeks ? ascentWeeks : descentWeeks;
   }
 
   // w0, w1: start week, end week
-  song.scoreFn = function(w0,w1) {
+  outbound.scoreFn = function(w0,w1) {
     var a1 = Math.pow(w1-ascentWeeks,3)/this.denominator(w1)/this.denominator(w1)/3;
     var a0 = Math.pow(w0-ascentWeeks,3)/this.denominator(w0)/this.denominator(w0)/3;
     return this.peak * (w1 - w0 - a1 + a0);
   }
 
-	return song;
+	return outbound;
 }
 
 // this: song collection
