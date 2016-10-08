@@ -1,7 +1,6 @@
 var firebase    = require("firebase"),
     chalk       = require("chalk"),
     util        = require("gulp-util"),
-    yargs       = require('yargs'),
     fbConfig    = require("../firebase-config");
 
 module.exports = function(typeSlug) {
@@ -23,20 +22,18 @@ module.exports = function(typeSlug) {
 
     return data.getBatch(typeModule.inputs)
     .then(typeModule.transform)
+    .then(data.setBatch)
     .then(function(outputs) {
-
-      data.setBatch(outputs);
-
-      var entityCount = Object.keys(entities).length;
-      var errorCount = errors.length;
-
-      util.log("Compiled",chalk.green(entityCount),"entities with",chalk.red(errorCount),"errors.");
+      if (!outputs) outputs = {};
+      util.log(
+        "Compiled",
+        chalk.green(Object.keys(outputs[typeModule.entities] || {}).length),
+        "entities with",
+        chalk.red(Object.keys(outputs[typeModule.errors] || {}).length),
+        "errors."
+      );
       return Promise.resolve(true);
-
-    })
-  })
-  .then(function() {
-    util.log("compile.js DONE");
-    return Promise.resolve(true);
+    });
   });
+
 };
