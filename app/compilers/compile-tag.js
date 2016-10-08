@@ -1,31 +1,48 @@
 var chalk       = require("chalk"),
-    fs          = require("fs"),
-    path        = require("path"),
-    q           = require("q"),
-    util        = require("gulp-util"),
+    util        = require("gulp-util");
+    numeral     = require("numeral"),
 
-    readEntity  = require("../../lib/fs").readEntity,
-
-    meta        = require('../meta'),
     scoring     = require('../scoring');
 
-// entities: array of entities of the type
-module.exports = function(yargs,entities) {
+    require("../polyfill");
+
+var _inputs = {
+  "tags": "tags/raw",
+  "songsByTag":"songs/by-tag",
+  "artistsByTag":"artists/by-tag",
+}
+
+var _outputs = [
+  ["entities", "tags/compiled"],
+  ["titles", "tags/titles"],
+  ["errors", "tags/errors"]
+  ["forArtists", "tags/for-artists"],
+  ["forLocations", "tags/for-geo"],
+  ["forSongs", "tags/for-songs"]
+];
+
+function _transform(snapshot) {
+
   util.log(chalk.magenta("compile-tag.js"));
 
+  var tags = snapshot[0].val() || {};
+  var songsByTag = snapshot[1].val() || {};
+  var artistsByTag = snapshot[2].val() || {};
+
+  entities = {};
   titles = {};
+  errors = [];
   forArtists = [];
   forSongs = [];
   forLocations = [];
 
-  var artists = readEntity(path.join("compiled","artist","by-tag"));
-  var songs = readEntity(path.join("compiled","song","by-tag"));
+  for (var slug in tags) {
+    var entity = tags[slug];
 
-  entities.forEach(function(entity) {
-    var slug = entity.instanceSlug;
+    titles[slug] = entity.title;
 
-    entity.artists = artists[entity.instanceSlug] || [];
-    entity.songs = scoring.sortAndRank(songs[entity.instanceSlug]) || [];
+    entity.artists = artistsByTag[slug] || [];
+    entity.songs = scoring.sortAndRank(songsByTag[slug]) || [];
     scoring.scoreCollection.call(entity);
 
     if (entity.coverage) {
@@ -44,13 +61,25 @@ module.exports = function(yargs,entities) {
       chalk.gray(entity.artistAdjustedAverage || 0)
     );
 
-  });
+    entities[slug] = entity;
 
-  return {
-    "all": entities,
-    "for-artist": forArtists,
-    "for-geo": forLocations,
-    "for-song": forSongs,
-    "titles": titles
   }
+
+}
+
+return {
+  "tags/compiled": entities,
+  "tags/titles": titles,
+  "tags/errors": errors,
+  "tags/for-artists": forArtists,
+  "tags/for-geo": forLocations,
+  "tags/for-songs": forSongs
+}
+
+module.exports = {
+  singular: "tag",
+  plural: "tags",
+  inputs: _inputs,
+  outputs: _outputs,
+  transform: _transform
 }

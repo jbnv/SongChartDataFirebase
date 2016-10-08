@@ -21,12 +21,12 @@ function _transform(snapshot) {
 
   util.log(chalk.magenta("compile-source.js"));
 
-  var sources = snapshot[0].val() || {};
-  var songsBySource = snapshot[1].val() || {};
+  var sources = snapshot[0].val() || {},
+      songsBySource = snapshot[1].val() || {},
 
-  entities = {};
-  titles = {};
-  errors = [];
+      entities = {},
+      titles = {},
+      errors = [];
 
   for (var slug in sources) {
     var entity = sources[slug];
