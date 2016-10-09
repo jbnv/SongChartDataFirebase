@@ -257,6 +257,22 @@ function _transform(snapshot) {
       });
     }
 
+    try {
+      for (var tagSlug in entity.get("tags")) {
+        entity.push("tags",tagSlug,allPlylists[tagSlug]);
+      }
+    } catch(err) {
+      errors[slug+":tags"] = err;
+    }
+
+    try {
+      for (var playlistSlug in entity.get("playlists")) {
+        entity.push("playlists",playlistSlug,allPlylists[playlistSlug]);
+      }
+    } catch(err) {
+      errors[slug+":playlists"] = err;
+    }
+
     // Processing complete.
 
     var postvalidateMessages = _postvalidate(slug,entity) || {};
@@ -389,11 +405,6 @@ module.exports = {
 //       });
 //     }
 //
-//     try {
-//       entity.playlists = lookupEntities(entity.playlists,"playlist");
-//     } catch(err) {
-//       errors.push({"instanceSlug":slug,"stage":"playlists","error":err});
-//     }
 //
 //     postvalidate(entity);
 //
