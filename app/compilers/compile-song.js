@@ -13,8 +13,9 @@ require("../polyfill");
 var _inputs = {
   "songs": "songs/raw",
   "artists": "artists/raw",
-  "tags": "tags/raw",
-  "roles": "roles/raw"
+  "playlists": "playlists/raw",
+  "roles": "roles/raw",
+  "tags": "tags/raw"
 };
 
 var _outputs = [
@@ -28,7 +29,7 @@ function _prevalidate(slug,song) {
 
   var messages = new Entity();
 
-  if (!song.peak) {
+  if (!song.get("peak")) {
     messages[slug+":peak"] = {
       type:"warning",
       title:"Peak Not Set",
@@ -36,7 +37,7 @@ function _prevalidate(slug,song) {
     };
   }
 
-  if (!song["ascent-weeks"]) {
+  if (!song.get("ascent-weeks")) {
     messages[slug+":ascent"] = {
       type:"warning",
       title:"Ascent Not Set",
@@ -44,7 +45,7 @@ function _prevalidate(slug,song) {
     };
   }
 
-  if (!song["descent-weeks"]) {
+  if (!song.get("descent-weeks")) {
     messages[slug+":descent"] = {
       type:"warning",
       title:"Descent Not Set",
@@ -52,7 +53,7 @@ function _prevalidate(slug,song) {
     };
   }
 
-  if (!song.complete && song["descent-weeks"] > 13) {
+  if (!song.get("complete") && song.get("descent-weeks") > 13) {
     messages[slug+":long-descent"] = {
       type:"warning",
       title:"Long Descent",
@@ -66,9 +67,9 @@ function _prevalidate(slug,song) {
 
 // Validation after processing.
 // song: Entity
-function _postvalidate(slug,song) {
+function _postvalidate(slug,songEntity) {
 
-  var messages = {};
+  var song = songEntity.export(), messages = {}
 
   if (!song.title) {
     messages[slug+":title"] = {
@@ -175,16 +176,17 @@ function _transform(snapshot) {
 
   var songs = snapshot[0].val() || {},
       allArtists = snapshot[1].val() || {},
-      allTags = snapshot[2].val() || {},
+      allPlaylists = snapshot[2].val() || {},
       allRoles = snapshot[3].val() || {},
+      allTags = snapshot[4].val() || {},
 
       entities = {},
       titles = {},
-      artists = {},
-      genres = {},
-      playlists = {},
-      sources = {}, //new Entity(),
-      tags = {},
+      artists = new Entity(),
+      genres = new Entity(),
+      playlists = new Entity(),
+      sources = new Entity(),
+      tags = new Entity(),
       decades = {},
       years = {},
       months = {},
@@ -211,7 +213,7 @@ function _transform(snapshot) {
     entity.setDefault("ascent-weeks",aggregates.averageAscent);
     entity.setDefault("descent-weeks",aggregates.averageDescent);
 
-    var songScored = scoring.score(entity);
+    var songScored = scoring.score(entity.export());
     entity.set("score",songScored.score);
     entity.set("duration",songScored.duration);
 
@@ -219,6 +221,41 @@ function _transform(snapshot) {
     entity.fix("genre","genres");
     entity.fix("playlist","playlists");
     entity.fix("source","sources");
+
+    var songArtists = entity.get("artists") || {};
+    for (var artistSlug in songArtists) {
+      var artistRole = songArtists[artistSlug] || {};
+      var entityClone = entity.export();
+      delete entityClone.artists;
+      entityClone.role = artistRole; //FUTURE artist.roleSlug;
+      entityClone.scoreFactor = 1.00; //FUTURE artist.scoreFactor;
+      switch (entityClone.role) {
+        case true: entityClone.scoreFactor = 1.00; break;
+        case "feature": entityClone.scoreFactor = 0.20; break;
+        case "lead": entityClone.scoreFactor = 0.75; break;
+        case "backup": entityClone.scoreFactor = 0.10; break;
+        case "writer": entityClone.scoreFactor = 1.00; break;
+        case "producer": entityClone.scoreFactor = 0.50; break;
+        case "sample": entityClone.scoreFactor = 0.1; break;
+        case "remake": entityClone.scoreFactor = 0.1; break;
+        case "remix": entityClone.scoreFactor = 0.25; break;
+        default: entityClone.scoreFactor = 0.25;
+      }
+      entityClone.totalScore = entityClone.score;
+      if (entityClone.score) entityClone.score *= entityClone.scoreFactor;
+      var artist = allArtists[artistSlug] || {};
+      artists.push(artistSlug,slug,entityClone);
+      entity.push("artists",artistSlug,{
+        title: artist.title || "NOT FOUND",
+        type: artist.type || null,
+        roleSlug: artistRole,
+        death: artist.death || null,
+        tags: artist.tags || null
+        // tags: (artist.tags || {})
+        //   .map(function(tag) { return (tag || {}).instanceSlug; })
+        //   .filter(function(tag) { return tag; })
+      });
+    }
 
     // Processing complete.
 
@@ -264,20 +301,6 @@ module.exports = {
   errors: "songs/errors"
 }
 
-// function transformArtist(artist,slug,roleSlug) {
-//   return {
-//     slug: slug,
-//     title: artist.title,
-//     type: artist.type,
-//     roleSlug: roleSlug,
-//     death: artist.death,
-//     tags: (artist.tags || [])
-//       .map(function(tag) { return (tag || {}).instanceSlug; })
-//       .filter(function(tag) { return tag; })
-//   };
-// }
-//
-//
 // // entities: array of entities of the type
 // module.exports = function(yargs,entities) {
 //   util.log(chalk.magenta("compile-song.js"));
@@ -310,34 +333,6 @@ module.exports = {
 //
 //...
 //
-//     if (entity.artists) {
-//       for (var artistSlug in entity.artists) {
-//         var artist = entity.artists[artistSlug] || {};
-//         if (!artists[artistSlug]) artists[artistSlug] = [];
-//         var entityClone = clone(entity);
-//         delete entityClone.artists;
-//         entityClone.role = artist; //FUTURE artist.roleSlug;
-//         entityClone.scoreFactor = 1.00; //FUTURE artist.scoreFactor;
-//         switch (entityClone.role) {
-//           case true: entityClone.scoreFactor = 1.00; break;
-//           case "feature": entityClone.scoreFactor = 0.20; break;
-//           case "lead": entityClone.scoreFactor = 0.75; break;
-//           case "backup": entityClone.scoreFactor = 0.10; break;
-//           case "writer": entityClone.scoreFactor = 1.00; break;
-//           case "producer": entityClone.scoreFactor = 0.50; break;
-//           case "sample": entityClone.scoreFactor = 0.1; break;
-//           case "remake": entityClone.scoreFactor = 0.1; break;
-//           case "remix": entityClone.scoreFactor = 0.25; break;
-//           default: entityClone.scoreFactor = 0.25;
-//         }
-//         entityClone.totalScore = entityClone.score;
-//         if (entityClone.score) entityClone.score *= entityClone.scoreFactor;
-//         artists[artistSlug].push(entityClone);
-//       }
-//       entity.artists = expandObject.call(entity.artists,allArtists,transformArtist);
-//     } else {
-//        entity.artists = [];
-//     }
 //
 //     if (entity.genres) {
 //       entity.genres.forEach(function(genreSlug) {
