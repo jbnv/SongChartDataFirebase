@@ -5,6 +5,7 @@ var chalk       = require("chalk"),
     numeral     = require("numeral"),
 
     Entity      = require('../../lib/entity'),
+    Era         = require('../../lib/era'),
     _match       = require('../../lib/match'),
 
     data        = require('../data'),
@@ -233,9 +234,9 @@ function _transform(snapshot) {
       playlists = new Entity(),
       sources = new Entity(),
       tags = new Entity(),
-      decades = {},
-      years = {},
-      months = {},
+      decades = new Entity(),
+      years = new Entity(),
+      months = new Entity(),
       unscored = {},
       errors = {},
 
@@ -323,6 +324,23 @@ function _transform(snapshot) {
       }
     } catch(err) {
       errors[slug+":sources"] = err;
+    }
+
+    var debut = entity.get("debut");
+    if (debut && debut !== "") {
+      var era = new Era(debut);
+      entity.set("debutEra",era.clone());
+      if (era.decade) {
+        decades.push(""+era.decade+"s",slug,true);
+      }
+      if (era.year) {
+        years.push(era.year,slug,true);
+      }
+      //TEMP Month push needs to actually put the song in all months to which is is scoreed.
+      if (era.month) {
+        // Loop through the scores
+        months.push(entity.debut,slug,true);
+      }
     }
 
     // Check against playlist rules.
@@ -415,9 +433,9 @@ function _transform(snapshot) {
     "songs/by-tag": tags.export(),
     "songs/by-playlist": playlists.export(),
     "songs/by-source": sources.export(),
-    "songs/by-decade": decades,
-    "songs/by-year": years,
-    "songs/by-month": months,
+    "songs/by-decade": decades.export(),
+    "songs/by-year": years.export(),
+    "songs/by-month": months.export(),
     "songs/unscored": unscored
   }
 
@@ -444,17 +462,6 @@ module.exports = {
 //
 //
 //
-//     if (entity.debut && entity.debut !== "") {
-//       var era = new Era(entity.debut);
-//       entity.debutEra = era.clone();
-//       if (era.decade) { pushToCollection(decades,""+era.decade+"s",entity); }
-//       if (era.year) { pushToCollection(years,era.year,entity); }
-//       //TEMP Month push needs to actually put the song in all months to which is is scoreed.
-//       if (era.month) {
-//         // Loop through the scores
-//         pushToCollection(months,entity.debut,entity);
-//       }
-//     }
 //
 //     postvalidate(entity);
 //
