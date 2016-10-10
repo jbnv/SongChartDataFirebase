@@ -173,7 +173,6 @@ function _aggregate(songs) {
 
 }
 
-
 // Returns true or false if the song matches this particular playlist.
 function _playlistMatch(playlist,song) {
   var slug = playlist.slug;
@@ -359,9 +358,10 @@ function _transform(snapshot) {
 
   for (var slug in entities) {
     var song = entities[slug];
+    if (!song.messages) song.messages = {};
 
     if (song.rank && (song.rank <= 100) && !song.complete) {
-      song.messages[slug+":incomplete"] = {
+      song.messages["incomplete"] = {
         type:"warning",
         title:"Incomplete",
         text:"This song has a high ranking but is not marked as complete. May need a writer and/or producer."
@@ -374,7 +374,7 @@ function _transform(snapshot) {
       song.rank && (song.rank <= 100)
       && (!/^((month)|(day))$/.test(debutType))
     ) {
-      song.messages[slug+":granularity"] = {
+      song.messages["granularity"] = {
         type:"warning",
         title:"Debut Granularity",
         text:"Please make the debut more specific."
@@ -383,7 +383,7 @@ function _transform(snapshot) {
       song.rank && (song.rank <= 1000)
       && (!/^((year)|(month)|(day))$/.test(debutType))
     ) {
-      song.messages[slug+":granularity"] = {
+      song.messages["granularity"] = {
         type:"warning",
         title:"Debut Granularity",
         text:"Please make the debut more specific."
