@@ -5,6 +5,7 @@ var chalk       = require("chalk"),
     numeral     = require("numeral"),
 
     Entity      = require('../../lib/entity'),
+    _match       = require('../../lib/match'),
 
     data        = require('../data'),
     scoring     = require('../scoring'),
@@ -172,6 +173,46 @@ function _aggregate(songs) {
 
 }
 
+
+// Returns true or false if the song matches this particular playlist.
+function _playlistMatch(playlist,song) {
+  var slug = playlist.slug;
+  var reducer = playlist.reducer;
+  var filter = playlist.filter;
+
+  // Custom reducer?
+  if (reducer === true) {
+    //console.log("[185]",chalk.cyan(slug),"reducer === true: playlist",slug); //TEMP
+    return require("./playlist/"+slug).match(song);
+  }
+
+  // General reducer?
+  if (reducer) {
+    //console.log("[192]",chalk.cyan(slug),"educers",reducer,slug); //TEMP
+    return require("../reducers/"+reducer)(slug)(song);
+  }
+
+  // Filter?
+  if (filter) {
+    //console.log("[199]",chalk.cyan(slug),"filter"); //TEMP
+    var matchesAll = true;
+    for (var field in filter) {
+      var songField = song[field];
+      var filterField = filter[field];
+      if (typeof filterField === "string") filterField = new RegExp(filterField);
+      var isMatch = _match(songField,filterField);
+      matchesAll = matchesAll && isMatch;
+      //console.log("[202] -",songField,filterField,isMatch); //TEMP
+    }
+    return matchesAll;
+  }
+
+  // Explicit match?
+  if ((song.playlists || {})[slug]) return true;
+
+  return false;
+}
+
 function _transform(snapshot) {
 
   util.log(chalk.magenta("compile-song.js"));
@@ -197,18 +238,12 @@ function _transform(snapshot) {
 
       aggregates = _aggregate(songs);
 
-  var playlistDefs = {};
-  fs.readdirSync(path.join(".","app","compilers","playlist"))
-  .forEach(function(filename) {
-    filenameTrunc = filename.replace(".js","");
-    playlist = require("./playlist/"+filenameTrunc);
-    playlistDefs[filenameTrunc] = playlist;
-  });
-
   // Processing pass.
 
   for (var slug in songs) {
     var entity = new Entity(songs[slug]);
+    var entityRaw = songs[slug];
+
     util.log(chalk.blue(slug)); //TEMP
 
     titles[slug] = entity.title();
@@ -217,7 +252,7 @@ function _transform(snapshot) {
     var prevalidateMessages = _prevalidate(slug,entity) || {};
     entity.addMessage(prevalidateMessages);
 
-    entity.set("unscored",!entity["peak"]);
+    entity.set("unscored",!entity.get("peak"));
 
     entity.setDefault("peak",aggregates.averagePeak);
     entity.setDefault("ascent-weeks",aggregates.averageAscent);
@@ -235,7 +270,7 @@ function _transform(snapshot) {
     var songArtists = entity.get("artists") || {};
     for (var artistSlug in songArtists) {
       var artistRole = songArtists[artistSlug] || {};
-      var entityClone = entity.export();
+      var entityClone = entity.export(); // need to actually make a copy here
       delete entityClone.artists;
       entityClone.role = artistRole; //FUTURE artist.roleSlug;
       entityClone.scoreFactor = 1.00; //FUTURE artist.scoreFactor;
@@ -274,35 +309,32 @@ function _transform(snapshot) {
         entity.push("tags",tagSlug,tag.title || "NOT FOUND");
       }
     } catch(err) {
-      console.log("[277] tags",slug,err);
       errors[slug+":tags"] = err;
-    }
-
-    try {
-      for (var playlistSlug in entity.get("playlists")) {
-        var playlist = allPlaylists[playlistSlug] || {};
-        playlists.push(playlistSlug,slug,true);
-        entity.push("playlists",playlistSlug,playlist.title || "NOT FOUND");
-      }
-    } catch(err) {
-      console.log("[277] playlists",slug,err);
-      errors[slug+":playlists"] = err;
     }
 
     // Check against playlist rules.
     // This needs to happen after all other processing takes place.
 
-    var entityPlaylists = [];
-    for (var key in playlistDefs) {
-      var playlist = playlistDefs[key];
-      if (playlist.match(entity)) entityPlaylists.push(key);
-    };
-
-    entityPlaylists.forEach(function(playlistSlug) {
-      var playlist = allPlaylists[playlistSlug];
-      playlists.push(playlistSlug,slug,true);
-      entity.push("playlists",playlistSlug,playlist.title || "NOT FOUND");
-    });
+    try {
+      for (var playlistSlug in allPlaylists) {
+        var playlist = allPlaylists[playlistSlug] || {};
+        playlist.slug = playlistSlug;
+        try {
+          if (_playlistMatch(playlist,entityRaw)) {
+            playlists.push(playlistSlug,slug,true);
+            entity.push("playlists",playlistSlug,playlist.title || "NOT FOUND");
+          }
+        } catch(err) {
+          //console.log("[329]",playlistSlug,"ERROR",err); //TEMP
+          errors[slug+":playlist:"+playlistSlug] = {
+            message: "Error evaluating function: "+err,
+            entity: entityRaw
+          }
+        }
+      }
+    } catch(err) {
+      errors[slug+":playlists"] = err;
+    }
 
     // Processing complete.
 
@@ -318,6 +350,7 @@ function _transform(snapshot) {
     );
 
     entities[slug] = entity.export();
+    //console.log(entity.export());
   }
 
   util.log("Song processing complete.");

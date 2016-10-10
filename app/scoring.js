@@ -8,10 +8,25 @@ function round000(n) {
 }
 
 function _sortAndRank(list,sortFn) {
-  if (!list) return [];
-  var outbound = list.sort(sortFn || transform.sortByScore);
-  outbound.forEach(function(item,index) {
-    item.rank = index + 1;
+  if (!list) return {};
+
+  // Make a temporary array.
+  var tuples = [];
+  for (var key in list) tuples.push([key, list[key]]);
+
+  // Make a version of the sort function that works on the temporary array.
+  tuples.sort(function(a,b) {
+    return (sortFn || transform.sortByScore)(a[1],b[1]);
+  });
+
+  // Make the result.
+  var outbound = {};
+  var rank = 0;
+  tuples.forEach(function(tuple) {
+    var key = tuple[0];
+    var item = tuple[1];
+    item.rank = ++rank;
+    outbound[key] = item;
   });
   return outbound;
 }

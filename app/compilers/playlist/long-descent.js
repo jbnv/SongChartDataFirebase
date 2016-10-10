@@ -1,3 +1,3 @@
 exports.match = function(song) {
-  return song["descent-weeks"] > 13;
+  return parseFloat(song["descent-weeks"] || 0) > 13;
 }

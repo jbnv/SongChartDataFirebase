@@ -1,7 +1,5 @@
-exports.match = function(song) {
-  var outbound = false;
-  (song.artists || []).forEach(function(artist) {
-    outbound = outbound || (artist.roleSlug === true && artist.death);
-  });
-  return outbound;
+function _match(artist) {
+  return (artist.roleSlug === true) && artist.death;
 }
+
+exports.match = require("../../reducers/song-artist")(_match);

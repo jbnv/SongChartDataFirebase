@@ -1,9 +1,9 @@
-exports.match = function(song) {
-  var outbound = false;
-  (song.artists || []).forEach(function(artist) {
-    if (artist.roleSlug === true) {
-      if ((artist.tags || []).includes("hof")) outbound = true;
-    }
-  });
-  return outbound;
-}
+exports.match = function(type) {
+
+  function _match(artist) {
+    return (Object.keys(artist.tags || {}).includes("hof"));
+  }
+
+  return require("../../reducers/song-artist")(_match);
+
+};

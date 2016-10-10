@@ -1,9 +1,13 @@
+var songArtistCount = require("../../reducers/song-artist-count");
+
+function _m(artist) {
+  return (artist.roleSlug === true) && ((artist.type || {}).slug == "m");
+}
+
+function _f(artist) {
+  return (artist.roleSlug === true) && ((artist.type || {}).slug == "f");
+}
+
 exports.match = function(song) {
-  var soloMales = (song.artists || []).filter(function(artist) {
-    return artist.roleSlug === true && (artist.type || {}).slug == "m";
-  });
-  var soloFemales = (song.artists || []).filter(function(artist) {
-    return artist.roleSlug === true && (artist.type || {}).slug == "f";
-  });
-  return soloMales.length == 1 && soloFemales.length == 1;
+  return songArtistCount(_m)(song) == 1 && songArtistCount(_f)(song) == 1;
 }
