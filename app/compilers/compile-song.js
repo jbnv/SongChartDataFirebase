@@ -18,7 +18,9 @@ var _inputs = {
   "artists": "artists/raw",
   "playlists": "playlists/raw",
   "roles": "roles/raw",
-  "tags": "tags/raw"
+  "tags": "tags/raw",
+  "genres": "genres/raw",
+  "sources": "sources/raw"
 };
 
 var _outputs = [
@@ -221,6 +223,8 @@ function _transform(snapshot) {
       allPlaylists = snapshot[2].val() || {},
       allRoles = snapshot[3].val() || {},
       allTags = snapshot[4].val() || {},
+      allGenres = snapshot[3].val() || {},
+      allSources = snapshot[4].val() || {},
 
       entities = {},
       titles = {},
@@ -302,13 +306,23 @@ function _transform(snapshot) {
     }
 
     try {
-      for (var tagSlug in entity.get("tags")) {
-        var tag = allTags[tagSlug] || {};
-        tags.push(tagSlug,slug,true);
-        entity.push("tags",tagSlug,tag.title || "NOT FOUND");
+      for (var genreSlug in entity.get("genres")) {
+        var genre = allGenres[genreSlug] || {};
+        genres.push(genreSlug,slug,true);
+        entity.push("genres",genreSlug,genre.title || "NOT FOUND");
       }
     } catch(err) {
-      errors[slug+":tags"] = err;
+      errors[slug+":genres"] = err;
+    }
+
+    try {
+      for (var sourceSlug in entity.get("sources")) {
+        var source = allSources[sourceSlug] || {};
+        sources.push(sourceSlug,slug,true);
+        entity.push("sources",sourceSlug,source.title || "NOT FOUND");
+      }
+    } catch(err) {
+      errors[slug+":sources"] = err;
     }
 
     // Check against playlist rules.
@@ -422,54 +436,13 @@ module.exports = {
 // // entities: array of entities of the type
 // module.exports = function(yargs,entities) {
 //   util.log(chalk.magenta("compile-song.js"));
-//
-//   allArtists = meta.getArtists();
-//
 //   var titles = {},...
-//
-//
-//   // [Aggregation pass]
 //
 //   // Processing pass.
 //   entities.forEach(function(entity) {
-//     if (entity.error) { errors.push(entity); return; }
-//
-//     prevalidate(entity);
-//
-//     var slug = entity.instanceSlug;
-//     if (!slug) return;
-//
-//     entity.ranks = {};
-//     titles[entity.instanceSlug] = entity.title;
-//
 //...
 //
 //
-//     if (entity.genres) {
-//       entity.genres.forEach(function(genreSlug) {
-//         if (!genres[genreSlug]) genres[genreSlug] = [];
-//         genres[genreSlug].push(entity);
-//       });
-//     }
-//
-//     try {
-//       entity.genres = lookupEntities(entity.genres,"genre");
-//     } catch(err) {
-//       errors.push({"instanceSlug":slug,"stage":"genres","error":err});
-//     }
-//
-//     if (entity.sources) {
-//       entity.sources.forEach(function(sourceSlug) {
-//         if (!sources[sourceSlug]) sources[sourceSlug] = [];
-//         sources[sourceSlug].push(entity);
-//       });
-//     }
-//
-//     try {
-//       entity.sources = lookupEntities(entity.sources,"source");
-//     } catch(err) {
-//       errors.push({"instanceSlug":slug,"stage":"source","error":err});
-//     }
 //
 //     if (entity.debut && entity.debut !== "") {
 //       var era = new Era(entity.debut);
