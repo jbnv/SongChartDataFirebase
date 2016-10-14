@@ -23,9 +23,9 @@ function _sortAndRank(list,sortFn) {
   var outbound = {};
   var rank = 0;
   tuples.forEach(function(tuple) {
-    var key = tuple[0];
-    var item = tuple[1];
+    var key = tuple[0], item = tuple[1];
     item.rank = ++rank;
+    item.rankCount = tuples.length;
     outbound[key] = item;
   });
   return outbound;
@@ -133,28 +133,31 @@ exports.aggregateCollection = function() {
 
 }
 
-// Rank an entity list over a collection.
+// Rank an entity list over a membership collection.
 // For use after the list has been processed.
-// entityList: List of entities that will be ranked.
-// collection: Particular collection from which to get the rankings.
+// entities: True-array of entities to rank.
+// memberships.
 // prefix: A prefix to add to the slug to make the ranking slug.
-exports.rankEntities = function(entityList,collection,prefix) {
-  Object.keys(collection).forEach(function(listKey) {
-    _sortAndRank(collection[listKey]);
-    collection[listKey].forEach(function(item) {
-      itemEntity = entityList.filter(function(e) {
-        return e.instanceSlug === item.instanceSlug;
-      })[0];
-      if (itemEntity) {
-        if (!itemEntity.ranks) itemEntity.ranks = {};
-        itemEntity.ranks[prefix+":"+listKey] = {
-          "rank":item.rank,
-          "total":collection[listKey].length
+exports.rankEntities = function(entities,memberships,prefix) {
+  for (var membershipKey in memberships) {
+    // Transform membership keys.
+    var members = {};
+    for (var memberKey in memberships[membershipKey]) {
+      members[memberKey] = entities[memberKey];
+    }
+    var members = _sortAndRank(members);
+    for (var memberKey in members) {
+      var member = members[memberKey];
+      var entity = entities[memberKey];
+      if (entity) {
+        if (!entity.ranks) entity.ranks = {};
+        entity.ranks[prefix+":"+membershipKey] = {
+          "rank":member.rank,
+          "total":member.rankCount
         };
       }
-    });
-  });
-
+    }
+  }
 }
 
 exports.bend = function(c) {
