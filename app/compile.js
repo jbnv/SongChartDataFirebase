@@ -25,6 +25,18 @@ module.exports = function(typeSlug) {
     .then(data.setBatch)
     .then(function(outputs) {
       if (!outputs) outputs = {};
+      if (!typeModule.entities) {
+        util.log(
+          chalk.red("ERROR"),
+          "'entities' output not specified."
+        );
+      }
+      if (!typeModule.errors) {
+        util.log(
+          chalk.red("ERROR"),
+          "'errors' output not specified."
+        );
+      }
       util.log(
         "Compiled",
         chalk.green(Object.keys(outputs[typeModule.entities] || {}).length),
