@@ -248,8 +248,6 @@ function _transform(snapshot) {
     var entity = new Entity(songs[slug]);
     var entityRaw = songs[slug];
 
-    util.log(chalk.blue(slug)); //TEMP
-
     titles[slug] = entity.title();
     entity.messages = {};
 
@@ -424,6 +422,26 @@ function _transform(snapshot) {
 
   };
 
+  /* Calculate song rankings on all terms.*/
+
+  util.log("Ranking by artist.");
+  scoring.rankEntities(entities,artists.export(),"artist");
+
+  util.log("Ranking by genre.");
+  scoring.rankEntities(entities,genres.export(),"genre");
+
+  util.log("Ranking by playlist.");
+  scoring.rankEntities(entities,playlists.export(),"playlist");
+
+  util.log("Ranking by source.");
+  scoring.rankEntities(entities,sources.export(),"source");
+
+  util.log("Ranking by decade.");
+  scoring.rankEntities(entities,decades.export(),"decade");
+
+  util.log("Ranking by year.");
+  scoring.rankEntities(entities,years.export(),"year");
+
   return {
     "songs/compiled": entities,
     "songs/titles": titles,
@@ -450,45 +468,3 @@ module.exports = {
   entities: "songs/compiled",
   errors: "songs/errors"
 }
-
-// // entities: array of entities of the type
-// module.exports = function(yargs,entities) {
-//   util.log(chalk.magenta("compile-song.js"));
-//   var titles = {},...
-//
-//   // Processing pass.
-//   entities.forEach(function(entity) {
-//...
-//
-//
-//
-//
-//     postvalidate(entity);
-//
-//   });
-//
-//   /* Calculate song rankings on all terms.*/
-//
-//   util.log("Ranking by artist.");
-//   scoring.rankEntities(entities,artists,"artist");
-//
-//   util.log("Ranking by genre.");
-//   scoring.rankEntities(entities,genres,"genre");
-//
-//   util.log("Ranking by playlist.");
-//   scoring.rankEntities(entities,playlists,"playlist");
-//
-//   util.log("Ranking by source.");
-//   scoring.rankEntities(entities,sources,"source");
-//
-//   util.log("Ranking by decade.");
-//   scoring.rankEntities(entities,decades,"decade");
-//
-//   util.log("Ranking by year.");
-//   scoring.rankEntities(entities,years,"year");
-//
-//   // months = {},
-//
-//
-//   return {...}
-// }
