@@ -14,9 +14,11 @@ exports.sortByTitle = function(a,b) {
   return titleA < titleB ? -1 : 1;
 }
 
-exports.sortByScore = function(a,b) {
+function _sortByScore(a,b) {
   return (b.score || 0) - (a.score || 0);
 }
+
+exports.sortByScore = _sortByScore;
 
 exports.sortBySongCount = function(a,b) {
   return (b.songs || []).length - (a.songs || []).length;
@@ -45,11 +47,14 @@ function _objectToArray(list,sortFn,options) {
   var outbound = [];
   for (var key in list) {
     var item = list[key];
+    if (typeof item != "object") {
+      item = { __value: item };
+    }
     item.__key = key;
     if (!options.filterFn || options.filterFn(item)) outbound.push(item);
   }
 
-  return outbound.sort(sortFn || transform.sortByScore).rank();
+  return outbound.sort(sortFn || _sortByScore).rank();
 }
 
 exports.objectToArray = _objectToArray;
