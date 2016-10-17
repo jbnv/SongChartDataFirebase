@@ -8,7 +8,7 @@ var chalk       = require("chalk"),
     Era         = require('../../lib/era'),
     _match       = require('../../lib/match'),
 
-    data        = require('../data'),
+    display     = require('../display'),
     scoring     = require('../scoring'),
     transform   = require('../transform');
 
@@ -184,19 +184,16 @@ function _playlistMatch(playlist,song) {
 
   // Custom reducer?
   if (reducer === true) {
-    //console.log("[185]",chalk.cyan(slug),"reducer === true: playlist",slug); //TEMP
     return require("./playlist/"+slug).match(song);
   }
 
   // General reducer?
   if (reducer) {
-    //console.log("[192]",chalk.cyan(slug),"educers",reducer,slug); //TEMP
     return require("../reducers/"+reducer)(slug)(song);
   }
 
   // Filter?
   if (filter) {
-    //console.log("[199]",chalk.cyan(slug),"filter"); //TEMP
     var matchesAll = true;
     for (var field in filter) {
       var songField = song[field];
@@ -204,7 +201,6 @@ function _playlistMatch(playlist,song) {
       if (typeof filterField === "string") filterField = new RegExp(filterField);
       var isMatch = _match(songField,filterField);
       matchesAll = matchesAll && isMatch;
-      //console.log("[202] -",songField,filterField,isMatch); //TEMP
     }
     return matchesAll;
   }
@@ -354,7 +350,6 @@ function _transform(snapshot) {
             entity.push("playlists",playlistSlug,playlist.title || "NOT FOUND");
           }
         } catch(err) {
-          //console.log("[329]",playlistSlug,"ERROR",err); //TEMP
           errors[slug+":playlist:"+playlistSlug] = {
             message: "Error evaluating function: "+err,
             entity: entityRaw
@@ -370,16 +365,13 @@ function _transform(snapshot) {
     var postvalidateMessages = _postvalidate(slug,entity) || {};
     entity.addMessage(postvalidateMessages);
 
-    numeral.zeroFormat("");
-
     util.log(
       chalk.blue(slug),
       entity.title(),
-      chalk.gray(numeral(entity.get("score")).format("0.00"))
+      display.number(entity.get("score"))
     );
 
     entities[slug] = entity.export();
-    //console.log(entity.export());
   }
 
   util.log("Song processing complete.");

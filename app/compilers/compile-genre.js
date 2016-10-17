@@ -28,7 +28,7 @@ function _transform(snapshot) {
       allSongs = snapshot[2].val() || {},
 
       artistsByGenre = new Entity(),
-      songsByGenre = new Entity({},"songsByGenre",true);
+      songsByGenre = new Entity();
 
   entities = {};
   titles = {};
@@ -47,7 +47,6 @@ function _transform(snapshot) {
     entity.songs = scoring.sortAndRank(songsByGenre.get(slug) || {});
 
     scoring.scoreCollection.call(entity);
-
 
     util.log(
       chalk.blue(slug),

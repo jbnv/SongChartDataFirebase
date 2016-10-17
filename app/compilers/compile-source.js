@@ -27,7 +27,7 @@ function _transform(snapshot) {
   var sources = snapshot[0].val() || {},
       allSongs = snapshot[1].val() || {},
 
-      songsBySource = new Entity();
+      songsBySource = new Entity(),
 
       entities = {},
       titles = {},
@@ -68,6 +68,6 @@ module.exports = {
   inputs: _inputs,
   outputs: _outputs,
   transform: _transform,
-  entities: "source/compiled",
-  errors: "source/errors"
+  entities: "sources/compiled",
+  errors: "sources/errors"
 }

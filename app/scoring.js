@@ -153,8 +153,8 @@ exports.rankEntities = function(entities,memberships,prefix) {
       if (entity) {
         if (!entity.ranks) entity.ranks = {};
         entity.ranks[prefix+":"+membershipKey] = {
-          "rank":member.rank,
-          "total":member.rankCount
+          "rank":member.__rank,
+          "total":member.__rankCount
         };
       }
     }
