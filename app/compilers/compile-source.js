@@ -1,14 +1,8 @@
-var chalk       = require("chalk"),
-    util        = require("gulp-util");
-    numeral     = require("numeral"),
-
-    scoring     = require('../scoring');
-
-    require("../polyfill");
+require("../polyfill");
 
 var _inputs = {
   "sources": "sources/raw",
-  "songsBySource": "songs/by-source"
+  "songs": "songs/compiled"
 }
 
 var _outputs = [
@@ -19,31 +13,41 @@ var _outputs = [
 
 function _transform(snapshot) {
 
+  var chalk       = require("chalk"),
+      util        = require("gulp-util"),
+
+      Entity      = require('../../lib/entity'),
+
+      display     = require('../display'),
+      scoring     = require('../scoring'),
+      transform   = require('../transform');
+
   util.log(chalk.magenta("compile-source.js"));
 
   var sources = snapshot[0].val() || {},
-      songsBySource = snapshot[1].val() || {},
+      allSongs = snapshot[1].val() || {},
+
+      songsBySource = new Entity();
 
       entities = {},
       titles = {},
-      errors = [];
+      errors = {};
+
+  songsBySource.extract("sources",allSongs);
 
   for (var slug in sources) {
     var entity = sources[slug];
 
     titles[slug] = entity.title;
 
-    entity.songs = scoring.sortAndRank(songsBySource[slug]) || [];
+    entity.songs = scoring.sortAndRank(songsBySource.get(slug) || {});
     scoring.scoreCollection.call(entity);
 
-    numeral.zeroFormat("");
-
     util.log(
-      chalk.blue(entity.instanceSlug),
+      chalk.blue(slug),
       entity.title,
-      chalk.gray(numeral(entity.songs.length).format("0")),
-      chalk.gray(numeral(entity.score || 0).format("0.00")),
-      chalk.gray(numeral(entity.songAdjustedAverage || 0).format("0.00"))
+      display.count(entity.songs),
+      display.number(entity.songAdjustedAverage)
     );
 
     entities[slug] = entity;
@@ -63,5 +67,7 @@ module.exports = {
   plural: "sources",
   inputs: _inputs,
   outputs: _outputs,
-  transform: _transform
+  transform: _transform,
+  entities: "source/compiled",
+  errors: "source/errors"
 }
