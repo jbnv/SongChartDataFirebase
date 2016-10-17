@@ -7,15 +7,10 @@ function Song(yargs) {
 
   var e = require("../entitylib")(this,argv);
 
-  this.genre = argv.g;
   this.debut = argv.d;
-  this.source = argv.source;
+  this.source = argv.source || null;
+  e.array_argument("genres","g");
   e.array_argument("playlists","p");
-  if (argv.r) {
-    this.scores = JSON.parse(argv.r);
-  } else {
-    this.scores = [];
-  }
 
   function addArtist(a) {
     a1 = (""+a).split(":");
@@ -47,6 +42,7 @@ function Song(yargs) {
 }
 
 Song.prototype.typeSlug = "song";
+Song.prototype.typeSlugPlural = "songs";
 Song.prototype.typeNoun = "song";
 
 Song.prototype.parameters = {
