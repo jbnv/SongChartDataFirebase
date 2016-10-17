@@ -1,21 +1,15 @@
-var chalk       = require("chalk"),
-    util        = require("gulp-util");
-    numeral     = require("numeral"),
-
-    scoring     = require('../scoring');
-
-    require("../polyfill");
+require("../polyfill");
 
 var _inputs = {
   "tags": "tags/raw",
-  "songsByTag":"songs/by-tag",
-  "artistsByTag":"artists/by-tag",
+  "artists": "artists/compiled",
+  "songs": "songs/compiled",
 }
 
 var _outputs = [
   ["entities", "tags/compiled"],
   ["titles", "tags/titles"],
-  ["errors", "tags/errors"]
+  ["errors", "tags/errors"],
   ["forArtists", "tags/for-artists"],
   ["forLocations", "tags/for-geo"],
   ["forSongs", "tags/for-songs"]
@@ -23,57 +17,73 @@ var _outputs = [
 
 function _transform(snapshot) {
 
+  var chalk       = require("chalk"),
+      util        = require("gulp-util"),
+
+      Entity      = require('../../lib/entity'),
+
+      display     = require('../display'),
+      scoring     = require('../scoring'),
+      transform   = require('../transform');
+
   util.log(chalk.magenta("compile-tag.js"));
 
-  var tags = snapshot[0].val() || {};
-  var songsByTag = snapshot[1].val() || {};
-  var artistsByTag = snapshot[2].val() || {};
+  var tags = snapshot[0].val() || {},
+      allArtists = snapshot[1].val() || {},
+      allSongs = snapshot[2].val() || {},
 
-  entities = {};
-  titles = {};
-  errors = [];
-  forArtists = [];
-  forSongs = [];
-  forLocations = [];
+      artistsByTag = new Entity(),
+      songsByTag = new Entity(),
+
+      entities = {},
+      titles = {},
+      errors = {},
+
+      forArtists = {},
+      forSongs = {},
+      forLocations = {};
+
+  artistsByTag.extract("tags",allArtists);
+  songsByTag.extract("tags",allSongs);
 
   for (var slug in tags) {
     var entity = tags[slug];
 
-    titles[slug] = entity.title;
+    titles[slug] = entity.title || "NOT FOUND";
 
-    entity.artists = artistsByTag[slug] || [];
-    entity.songs = scoring.sortAndRank(songsByTag[slug]) || [];
+    entity.artists = artistsByTag.get(slug) || {};
+    entity.songs = scoring.sortAndRank(songsByTag.get(slug) || {});
+
     scoring.scoreCollection.call(entity);
 
     if (entity.coverage) {
-      if (entity.coverage.artist) { forArtists.push(entity); }
-      if (entity.coverage.geo) { forLocations.push(entity); }
-      if (entity.coverage.song) { forSongs.push(entity); }
+      if (entity.coverage.artist) { forArtists[slug] = entity; }
+      if (entity.coverage.geo) { forLocations[slug] = entity; }
+      if (entity.coverage.song) { forSongs[slug] = entity; }
     }
 
     util.log(
-      chalk.blue(entity.instanceSlug),
+      chalk.blue(slug),
       entity.title,
-      chalk.gray(entity.songs.length),
-      chalk.gray(entity.artists.length),
-      chalk.gray(entity.score || 0),
-      chalk.gray(entity.songAdjustedAverage || 0),
-      chalk.gray(entity.artistAdjustedAverage || 0)
+      display.count(entity.songs),
+      display.number(entity.songAdjustedAverage),
+      display.count(entity.artists),
+      display.number(entity.artistAdjustedAverage)
     );
 
     entities[slug] = entity;
 
   }
 
-}
+  return {
+    "tags/compiled": entities,
+    "tags/titles": titles,
+    "tags/errors": errors,
+    "tags/for-artists": forArtists,
+    "tags/for-geo": forLocations,
+    "tags/for-songs": forSongs
+  }
 
-return {
-  "tags/compiled": entities,
-  "tags/titles": titles,
-  "tags/errors": errors,
-  "tags/for-artists": forArtists,
-  "tags/for-geo": forLocations,
-  "tags/for-songs": forSongs
 }
 
 module.exports = {
@@ -81,5 +91,7 @@ module.exports = {
   plural: "tags",
   inputs: _inputs,
   outputs: _outputs,
-  transform: _transform
+  transform: _transform,
+  entities: "tags/compiled",
+  errors: "tags/errors"
 }
