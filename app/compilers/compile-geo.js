@@ -57,7 +57,8 @@ function _transform(snapshot) {
   return {
     "geo/compiled": entities,
     "geo/titles": titles,
-    "geo/errors": errors
+    "geo/errors": errors,
+    "summary/locations/count": Object.keys(entities).length
   }
 
 }

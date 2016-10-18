@@ -57,7 +57,8 @@ function _transform(snapshot) {
   return {
     "sources/compiled": entities,
     "sources/titles": titles,
-    "sources/errors": errors
+    "sources/errors": errors,
+    "summary/sources/count": Object.keys(entities).length
   }
 
 }

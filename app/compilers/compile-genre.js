@@ -64,7 +64,8 @@ function _transform(snapshot) {
   return {
     "genres/compiled": entities,
     "genres/titles": titles,
-    "genres/errors": errors
+    "genres/errors": errors,
+    "summary/genres/count": Object.keys(entities).length
   }
 
 }

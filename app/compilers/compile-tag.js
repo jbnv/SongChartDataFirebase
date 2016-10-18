@@ -81,7 +81,8 @@ function _transform(snapshot) {
     "tags/errors": errors,
     "tags/for-artists": forArtists,
     "tags/for-geo": forLocations,
-    "tags/for-songs": forSongs
+    "tags/for-songs": forSongs,
+    "summary/tags/count": Object.keys(entities).length
   }
 
 }

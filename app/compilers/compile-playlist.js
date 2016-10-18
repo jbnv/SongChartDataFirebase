@@ -95,7 +95,8 @@ function _transform(snapshot) {
   return {
     "playlists/compiled": entities,
     "playlists/titles": titles,
-    "playlists/errors": errors
+    "playlists/errors": errors,
+    "summary/playlists/count": Object.keys(entities).length
   }
 
 }

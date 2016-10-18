@@ -446,7 +446,8 @@ function _transform(snapshot) {
     "songs/by-decade": decades.export(),
     "songs/by-year": years.export(),
     "songs/by-month": months.export(),
-    "songs/unscored": unscored
+    "songs/unscored": unscored,
+    "summary/songs/count": Object.keys(entities).length
   }
 
 }
