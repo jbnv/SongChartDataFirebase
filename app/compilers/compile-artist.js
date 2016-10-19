@@ -2,6 +2,8 @@ var chalk       = require("chalk"),
     util        = require("gulp-util");
     numeral     = require("numeral"),
 
+    Entity      = require('../../lib/entity'),
+
     data        = require('../data'),
     scoring     = require('../scoring'),
     transform   = require('../transform');
@@ -38,38 +40,36 @@ function _transform(snapshot) {
   entities = {};
   titles = {};
   errors = [];
-  roles = {};
-  genres = {};
-  origins = {};
-  tags = {};
+  roles = new Entity(),
+  genres = new Entity(),
+  origins = new Entity(),
+  tags = new Entity();
+
+  console.log(Object.keys(artists).length);
 
   for (var slug in artists) {
     var entity = artists[slug];
 
     titles[slug] = entity.title;
 
-    var entitySongs = songsByArtist[slug] || [];
-
-    entity.songs = scoring.sortAndRank(entitySongs);
+    entity.songs = scoring.sortAndRank(songsByArtist[slug] || {});
     scoring.scoreCollection.call(entity);
 
-    var collaborators = {};
-    entity.songs.forEach(function(song) {
-      var songEntity = allSongs[song.instanceSlug];
-      Object.keys(songEntity.artists || {}).forEach(function(artistSlug) {
-        if (artistSlug == slug) return;
-        if (!collaborators[artistSlug]) collaborators[artistSlug] = [];
-        collaborators[artistSlug].push(song);
-      });
-    });
+    var collaborators = new Entity();
+    for (var songSlug in entity.songs) {
+      var songEntity = allSongs[songSlug] || {};
+      for (var artistSlug in (songEntity.artists || {})) {
+        if (artistSlug == slug) continue;
+        collaborators.push(artistSlug,songSlug,songEntity);
+      }
+    }
     entity.collaborators = {};
-    Object.keys(collaborators).forEach(function(artistSlug) {
-      var artistEntity = artists[artistSlug] || {};
+    collaborators.forEach(function(artistSlug,artistEntity) {
       var outbound = {
         slug: artistSlug,
         title: artistEntity.title || "MISSING '"+artistSlug+"'",
-        songCount: collaborators[artistSlug].length,
-        score: collaborators[artistSlug].scoreAdjustedAverage()
+        songCount: Object.keys(collaborators.get(artistSlug) || {}).length
+        //TEMP score: collaborators[artistSlug].scoreAdjustedAverage()
       };
       entity.collaborators[artistSlug] = outbound;
     });
@@ -135,6 +135,21 @@ function _transform(snapshot) {
 
   }
 
+  /* Calculate song rankings on all terms.*/
+
+  util.log("Ranking by genre.");
+  scoring.rankEntities(entities,genres.export(),"genre");
+
+  util.log("Ranking by origin.");
+  scoring.rankEntities(entities,origins.export(),"origin");
+
+  util.log("Ranking by tag.");
+  scoring.rankEntities(entities,tags.export(),"tag");
+
+  util.log("Artist processing complete.");
+
+  entities = scoring.sortAndRank(entities,transform.sortBySongAdjustedAverage);
+
   return {
     "artists/compiled": entities,
     "artists/titles": titles,
@@ -152,20 +167,7 @@ module.exports = {
   plural: "artists",
   inputs: _inputs,
   outputs: _outputs,
-  transform: _transform
+  transform: _transform,
+  entities: "artists/compiled",
+  errors: "artists/errors"
 }
-
-//   /* Calculate song rankings on all terms.*/
-//
-//   util.log("Ranking by genre.");
-//   scoring.rankEntities(entities,genres,"genre");
-//
-//   util.log("Ranking by origin.");
-//   scoring.rankEntities(entities,origins,"origin");
-//
-//   util.log("Ranking by tag.");
-//   scoring.rankEntities(entities,tags,"tag");
-//
-//   util.log("Artist processing complete.");
-//
-//   entities = scoring.sortAndRank(entities,transform.sortBySongAdjustedAverage);
