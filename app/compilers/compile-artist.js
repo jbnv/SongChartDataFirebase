@@ -16,7 +16,8 @@ var _inputs = {
   "tagsForArtist": "tags/for-artist",
   "songs": "songs/compiled",
   "tags": "tags/raw",
-  "roles": "roles/raw"
+  "roles": "roles/raw",
+  "genres": "genres/raw"
 }
 
 var _outputs = [
@@ -35,6 +36,7 @@ function _transform(snapshot) {
   var allSongs = snapshot[3].val() || {};
   var allTags = snapshot[4].val() || {};
   var allRoles = snapshot[5].val() || {};
+  var allGenres = snapshot[6].val() || {};
   var allArtistTypes = require("../models/artist-types") || {};
 
   entities = {};
@@ -80,18 +82,8 @@ function _transform(snapshot) {
     roles = transform.byList(roles,slug,entity.roles);
     entity.roles = transform.expand(entity.roles,allRoles);
 
-      // if (entity.genres) {
-      //   for (var genre in entity.genres) {
-      //     // Record in the outbound list.
-      //     if (!genres[genre]) genres[genre] = [];
-      //     genres[genre].push(entity);
-      //     // Expand this entity.
-      //     db.ref("genres").child(genre).once('value')
-      //     .then(function(snapshot) {
-      //       entity.genres[genre] = snapshot.val();
-      //     })
-      //   }
-      // }
+    genres = transform.byList(genres,slug,entity.genres);
+    entity.genres = transform.expand(entity.genres,allGenres);
 
 //     if (entity.genres) {
 //       entity.genres.forEach(function(genreSlug) {
