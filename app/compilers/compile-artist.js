@@ -17,7 +17,8 @@ var _inputs = {
   "songs": "songs/compiled",
   "tags": "tags/raw",
   "roles": "roles/raw",
-  "genres": "genres/raw"
+  "genres": "genres/raw",
+  "locations": "geo/raw"
 }
 
 var _outputs = [
@@ -37,6 +38,7 @@ function _transform(snapshot) {
   var allTags = snapshot[4].val() || {};
   var allRoles = snapshot[5].val() || {};
   var allGenres = snapshot[6].val() || {};
+  var allLocations = snapshot[7].val() || {};
   var allArtistTypes = require("../models/artist-types") || {};
 
   entities = {};
@@ -46,8 +48,6 @@ function _transform(snapshot) {
   genres = new Entity(),
   origins = new Entity(),
   tags = new Entity();
-
-  console.log(Object.keys(artists).length);
 
   for (var slug in artists) {
     var entity = artists[slug];
@@ -85,34 +85,33 @@ function _transform(snapshot) {
     genres = transform.byList(genres,slug,entity.genres);
     entity.genres = transform.expand(entity.genres,allGenres);
 
-//     if (entity.genres) {
-//       entity.genres.forEach(function(genreSlug) {
-//         if (!genres[genreSlug]) genres[genreSlug] = [];
-//         genres[genreSlug].push(entity);
-//       });
-//       entity.genres = lookupEntities(entity.genres,"genre");
-//     }
-//
-//     if (entity.origin) {
-//         if (!origins[entity.origin]) origins[entity.origin] = [];
-//         origins[entity.origin].push(entity);
-//         entity.origin = lookupEntity(entity.origin,"geo");
-//     }
-//
-//     if (entity.type) {
-//       var typeSlug = entity.type;
-//       entity.type = allArtistTypes[typeSlug];
-//       entity.type.slug = typeSlug;
-//     }
-//
-//     if (entity.members) {
-//       entity.members = lookupEntities(entity.members,"artist");
-//     }
-//
-//     if (entity.xref) {
-//       entity.xref = lookupEntities(entity.xref,"artist");
-//     }
-//
+    var origin = entity.origin;
+    if (origin) {
+      origins.push(origin,slug,true);
+      entity.origin = allLocations[origin] || origin;
+    }
+
+    if (entity.type) {
+      var typeSlug = entity.type;
+      entity.type = allArtistTypes[typeSlug];
+      entity.type.slug = typeSlug;
+    }
+
+    // Make a shallow copy to prevent circular references.
+    function _shallow(artist) {
+      return {
+        title: (artist || {}).title || "UNKNOWN"
+      };
+    }
+
+    if (entity.members) {
+      entity.members = transform.expand(entity.members,artists,_shallow);
+    }
+
+    if (entity.xref) {
+      entity.xref = transform.expand(entity.xref,artists,_shallow);
+    }
+
     numeral.zeroFormat("");
 
     util.log(
