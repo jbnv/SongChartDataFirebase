@@ -1,3 +1,5 @@
+require("./polyfill");
+
 // Methods for sorting, filtering and transforming data for display.
 // This file should be the same between the data and the app.
 
@@ -12,9 +14,11 @@ exports.sortByTitle = function(a,b) {
   return titleA < titleB ? -1 : 1;
 }
 
-exports.sortByScore = function(a,b) {
+function _sortByScore(a,b) {
   return (b.score || 0) - (a.score || 0);
 }
+
+exports.sortByScore = _sortByScore;
 
 exports.sortBySongCount = function(a,b) {
   return (b.songs || []).length - (a.songs || []).length;
@@ -32,35 +36,35 @@ exports.sortByArtistAdjustedAverage = function(a,b) {
   return (b.artistAdjustedAverage || 0) - (a.artistAdjustedAverage || 0);
 }
 
-exports.objectToArray = function(obj) {
-  var outbound = [];
-  for (var slug in obj) {
-    var item = obj[slug];
-    item.instanceSlug = slug;
-    outbound.push(item);
-  }
-  return outbound;
-}
-
-exports.sortAndRank = function(list,options) {
+// Includes a sort and rank.
+function _objectToArray(list,sortFn,options) {
 
   if (!list) return [];
 
   if (!options) options = {};
-  if (!options.sortFn) options.sortFn = transform.sortByScore;
 
+  // Convert to array.
   var outbound = [];
-  if (options.filterFn) {
-    outbound = list.sort(options.sortFn);
-  } else {
-    outbound = list.filter(filterFn).sort(options.sortFn);
+  for (var key in list) {
+    var item = list[key];
+    if (typeof item != "object") {
+      item = { __value: item };
+    }
+    item.__key = key;
+    if (!options.filterFn || options.filterFn(item)) outbound.push(item);
   }
 
-  outbound.forEach(function(item,index) {
-    if (!item.ranks) item.ranks = {};
-    item.ranks[options.rankField] = index + 1;
-  });
+  return outbound.sort(sortFn || _sortByScore).rank();
+}
 
+exports.objectToArray = _objectToArray;
+
+exports.sortObject = function(list,sortFn,options) {
+  var outbound = {};
+  _objectToArray(list,sortFn).forEach(function(item) {
+    outbound[item.__key] = item;
+    delete item.__key;
+  });
   return outbound;
 }
 
@@ -84,14 +88,14 @@ exports.byList = function (outbound,itemSlug,collection) {
 
 // trueArray: { : true }
 // source: {}
-// transform: (optional) function to transform source object
-exports.expand =  function(trueArray,source,transform) {
+// transformFn: (optional) function to transform source object
+exports.expand =  function(trueArray,source,transformFn) {
   if (!trueArray) return null;
   if (!source) return null;
-  if (!transform) transform = function(x) { return x; };
+  if (!transformFn) transformFn = function(x) { return x; };
   var outbound = {};
   for (var key in trueArray) {
-    outbound[key] = transform(source[key]) || true;
+    outbound[key] = transformFn(source[key]) || true;
   }
   return outbound;
 }

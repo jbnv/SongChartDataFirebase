@@ -25,7 +25,9 @@ if (!Array.prototype.adjustedAverage) {
 if (!Array.prototype.scoreAdjustedAverage) {
   Array.prototype.scoreAdjustedAverage = function() {
     if (this.length == 0) return null;
-    return this.map(function(e) { return e.score; }).adjustedAverage();
+    return this.map(function(e) {
+      return parseFloat(e.score || 0);
+    }).adjustedAverage();
   }
 }
 
@@ -116,6 +118,18 @@ if (!Array.prototype.find) {
 
 Array.prototype.findBySlug = function(slug) {
   return this.find(function(el) { return el.instanceSlug === slug; })
+}
+
+// Assumes array is already sorted.
+if (!Array.prototype.rank) {
+  Array.prototype.rank = function() {
+    var count = this.length;
+    this.forEach(function(item,index) {
+      item.__rank = index+1;
+      item.__rankCount = count;
+    });
+    return this;
+  };
 }
 
 if (!Array.prototype.sum) {

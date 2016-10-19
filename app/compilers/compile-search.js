@@ -1,14 +1,20 @@
-var chalk = require("chalk"),
-    fs = require("fs"),
-    path = require('path'),
-    util = require("gulp-util"),
+require("../polyfill");
 
-    meta = require('../meta'),
-    writeEntity = require('../../lib/fs').writeEntity;
+var _inputs = {
+  "artists": "artists/compiled",
+  "genres": "genres/compiled",
+  "locations": "geo/compiled",
+  "playlists": "playlists/compiled",
+  "roles": "roles/compiled",
+  "songs": "songs/compiled",
+  "sources": "sources/compiled",
+  "tags": "tags/compiled"
+};
 
-require('../polyfill');
-
-var transformsPath = path.join(meta.root,"raw","transform.json");
+var _outputs = [
+  ["terms", "search/terms"],
+  ["errors", "search/errors"]
+];
 
 function unique(a) {
     var prims = {"boolean":{}, "number":{}, "string":{}}, objs = [];
@@ -25,10 +31,11 @@ function unique(a) {
 // Return an array of terms that the term could match.
 String.prototype.transmute = function() {
 
-  var transmuted = this.replace(/[\u2000-\u206F\u2E00-\u2E7F\\'!"#$%&()*+,\-.\/:;<=>?@\[\]^_`{|}~]/g,"");
+  var transmuted = this.replace(/[\u2000-\u206F\u2E00-\u2E7F\\'!"#$%&()*+,\-.\/:;<=>?@\[\]^_`{|}~\n]/g,"");
   if (transmuted.length < 3) return null;
 
-  //TODO Read and apply the transforms.json file
+  // Excluded words.
+  if (/^the$/.test(transmuted)) return null;
 
   var outbound = [];
   for (var length = 3; length <= transmuted.length; length++) {
@@ -38,68 +45,83 @@ String.prototype.transmute = function() {
   return outbound;
 }
 
-// entities: array of entities of the type
-module.exports = function(yargs) {
+function _transform(snapshot) {
 
-  // Array of slugs representing the recognized search terms.
-  var terms = [];
+  var chalk       = require("chalk"),
+      util        = require("gulp-util"),
 
-  // slug: { "route", "title"}
-  var entities = {};
+      Entity      = require('../../lib/entity'),
+
+      display     = require('../display'),
+      scoring     = require('../scoring'),
+      transform   = require('../transform');
+
+  util.log(chalk.magenta("compile-search.js"));
+
+  var entities = new Entity();
 
   function process(typeSlug,inboundEntities) {
 
-    util.log(chalk.blue(typeSlug),"Processing "+inboundEntities.length+" entities.");
-    inboundEntities.forEach(function(entity) {
+    util.log(chalk.blue(typeSlug),"Processing "+Object.keys(inboundEntities).length+" entities.");
+
+    for (var slug in inboundEntities) {
+
+      var entity = inboundEntities[slug],
+          routeSlug = typeSlug+"_"+slug,
+          route = typeSlug+"/"+slug,
+          ref = {
+            "type" : typeSlug,
+            "route" : route,
+            "title" : entity.title,
+            "score" : entity.score || 0,
+            "songCount": Object.keys(entity.songs || {}).length,
+            "artistCount": Object.keys(entity.artists || {}).length
+          };
 
       // Entity does not have explicit search terms: Imply from title.
-      var entityTerms = entity.searchTerms || (""+entity.title || "").toLowerCase().split(" ") || [];
-      entityTerms = unique(entityTerms);
+      var entityTerms = function(e) {
+        if (e.searchTerms) return Object.keys(e.searchTerms);
+        if (e["search-terms"]) return Object.keys(e["search-terms"]);
+        if (e.title) return (""+e.title || "").toLowerCase().split(" ");
+        return [];
+      }(entity);
 
-      var ref = {
-        "type" : typeSlug,
-        "route" : typeSlug+"/"+entity.instanceSlug,
-        "title" : entity.title,
-        "score" : entity.score || 0,
-        "songCount": (entity.songs || []).length,
-        "artistCount": (entity.artists || []).length,
-      };
-
-      entityTerms.forEach(function(term) {
+      unique(entityTerms).forEach(function(term) {
 
         substrings = term.transmute();
         if (!substrings) return;
 
-        substrings.forEach(function(term) {
-          if (terms.includes(term)) {
-            entities[term].push(ref);
-          } else {
-            terms.push(term);
-            entities[term] = [ref];
-          }
+        substrings.forEach(function(substring) {
+          entities.push(substring,routeSlug,ref);
         });
 
       }); // entityTerms
 
-    }); // entities
+    }
   }
 
-  process("artist",meta.getArtists());
-  process("genre",meta.getGenres());
-  process("geo",meta.getLocations());
-  process("playlist",meta.getPlaylists());
-  process("source",meta.getSources());
-  process("song",meta.getSongs());
+  process("artist",snapshot[0].val() || {});
+  process("genre",snapshot[1].val() || {});
+  process("geo",snapshot[2].val() || {});
+  process("playlist",snapshot[3].val() || {});
+  process("role",snapshot[4].val() || {});
+  process("song",snapshot[5].val() || {});
+  process("source",snapshot[6].val() || {});
+  process("tag",snapshot[7].val() || {});
 
-  var termsRoute = meta.compiledRoute("search","terms");
-  terms = terms.sort();
-  writeEntity(termsRoute,terms);
+  return {
+    "search/terms": entities.export(),
+    "search/errors": {}
+  }
 
-  terms.forEach(function(term) {
-    if (!entities[term]) return; // This shouldn't happen but is here to prevent errors.
-    writeEntity(meta.compiledRoute("search",term),entities[term]);
-    //util.log(chalk.blue(term),chalk.gray(entities[term].length));
-  })
+}
 
-  util.log("Compiled "+chalk.green(terms.length)+" entities.");
+module.exports = {
+singular: "search",
+plural: "search",
+inputs: _inputs,
+outputs: _outputs,
+transform: _transform,
+entities: "search/terms",
+errors: "search/errors"
 }

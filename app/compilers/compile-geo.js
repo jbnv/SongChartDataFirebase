@@ -1,9 +1,3 @@
-var chalk       = require("chalk"),
-    util        = require("gulp-util");
-    numeral     = require("numeral"),
-
-    scoring     = require('../scoring');
-
 require("../polyfill");
 
 var _inputs = {
@@ -19,53 +13,41 @@ var _outputs = [
 
 function _transform(snapshot) {
 
+  var chalk       = require("chalk"),
+      util        = require("gulp-util"),
+
+      Entity      = require('../../lib/entity'),
+
+      display     = require('../display'),
+      scoring     = require('../scoring');
+
   util.log(chalk.magenta("compile-geo.js"));
 
-  var locations = snapshot[0].val() || {};
-  var artists = snapshot[1].val() || {};
+  var locations = snapshot[0].val() || {},
+      allArtists = snapshot[1].val() || {},
 
-  entities = {};
-  titles = {};
-  errors = [];
+      artistsByGenre = new Entity(),
 
-  util.log("Caching artists and scores...");
-  var locationArtists = {};
-  var locationScores = {};
-  for (var artistSlug in artists) {
-    var artist = artists[artistSlug];
-    var slug = artist.origin;
-    if (!locationArtists[slug]) { locationArtists[slug] = []; }
-    if (!locationScores[slug]) { locationScores[slug] = 0.0; }
-    locationArtists[slug].push(artist);
-    if (artist.score) {
-      try {
-        locationScores[slug] += parseFloat(artist.score);
-      } catch(error) {
-      }
-    }
-  }
-  util.log("Cache complete.");
+      entities = {},
+      titles = {},
+      errors = {};
+
+  artistsByGenre.extract("origin",allArtists);
 
   for (var slug in locations) {
     var entity = locations[slug];
 
     titles[slug] = entity.title;
 
-    var entityArtists = locationArtists[slug] || [];
-    entity.artists = entityArtists.toObject(
-      function(o) { return o.instanceSlug; },
-      function(o) { return o.title; }
-    );
-    entity.score = locationScores[slug] || 0;
-    entity.artistAdjustedAverage = entityArtists.adjustedAverage();
+    entity.artists = artistsByGenre.get(slug) || {};
 
-    numeral.zeroFormat("");
+    scoring.scoreCollection.call(entity);
 
     util.log(
-      chalk.blue(entity.instanceSlug),
+      chalk.blue(slug),
       entity.title,
-      chalk.gray(numeral((entity.artists || []).length).format("0")),
-      chalk.gray(numeral(entity.artistAdjustedAverage || 0).format("0.00"))
+      display.count(entity.artists),
+      display.number(entity.artistAdjustedAverage)
     );
 
     entities[slug] = entity;
@@ -85,5 +67,7 @@ module.exports = {
   plural: "locations",
   inputs: _inputs,
   outputs: _outputs,
-  transform: _transform
+  transform: _transform,
+  entities: "geo/compiled",
+  errors: "geo/errors"
 }

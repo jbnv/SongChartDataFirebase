@@ -1,34 +1,14 @@
 // Middleware for scoring and ranking.
 
 require("./polyfill");
-var transform = require("./transform");
+var _transform = require("./transform");
 
 function round000(n) {
   return Math.round(parseFloat(n)*1000)/1000;
 }
 
 function _sortAndRank(list,sortFn) {
-  if (!list) return {};
-
-  // Make a temporary array.
-  var tuples = [];
-  for (var key in list) tuples.push([key, list[key]]);
-
-  // Make a version of the sort function that works on the temporary array.
-  tuples.sort(function(a,b) {
-    return (sortFn || transform.sortByScore)(a[1],b[1]);
-  });
-
-  // Make the result.
-  var outbound = {};
-  var rank = 0;
-  tuples.forEach(function(tuple) {
-    var key = tuple[0], item = tuple[1];
-    item.rank = ++rank;
-    item.rankCount = tuples.length;
-    outbound[key] = item;
-  });
-  return outbound;
+  return _transform.sortObject(list,sortFn || _transform.sortByScore);
 }
 
 exports.sortAndRank = _sortAndRank;
@@ -38,7 +18,7 @@ exports.sortAndRank = _sortAndRank;
 // Peak score (P): Higher score (lower number) is better.
 // Duration (M): More is better.
 
-exports.score = function(inbound,scoringOptions) {
+function _score(inbound,scoringOptions) {
 
   var outbound = {};
 
@@ -58,31 +38,52 @@ exports.score = function(inbound,scoringOptions) {
     (ascentWeeks+descentWeeks) * 7 / 30.4375
   );
 
-  outbound.denominator = function(w) {
-    return w < ascentWeeks ? ascentWeeks : descentWeeks;
+  if (scoringOptions.includeDenominator) {
+    outbound.denominator = function(w) {
+      return w < ascentWeeks ? ascentWeeks : descentWeeks;
+    }
   }
 
   // w0, w1: start week, end week
-  outbound.scoreFn = function(w0,w1) {
-    var a1 = Math.pow(w1-ascentWeeks,3)/this.denominator(w1)/this.denominator(w1)/3;
-    var a0 = Math.pow(w0-ascentWeeks,3)/this.denominator(w0)/this.denominator(w0)/3;
-    return this.peak * (w1 - w0 - a1 + a0);
+  if (scoringOptions.includeScoreFn) {
+    outbound.scoreFn = function(w0,w1) {
+      var a1 = Math.pow(w1-ascentWeeks,3)/this.denominator(w1)/this.denominator(w1)/3;
+      var a0 = Math.pow(w0-ascentWeeks,3)/this.denominator(w0)/this.denominator(w0)/3;
+      return this.peak * (w1 - w0 - a1 + a0);
+    }
   }
 
 	return outbound;
 }
 
+exports.score = _score;
+
 // this: song collection
 exports.scoreCollection = function() {
 
+  function _properties(collection) {
+    if (collection) {
+      var collectionArray =
+        Array.isArray(collection)
+        ? collection
+        : Object.keys(collection).map(function(key) { return collection[key]; });
+      return {
+        count: collectionArray.length,
+        average: collectionArray.scoreAdjustedAverage()
+      };
+    }
+  }
+
   if (this.songs) {
-    this.songCount = this.songs.length;
-    this.songAdjustedAverage = this.songs.scoreAdjustedAverage();
+    var songProperties = _properties(this.songs);
+    this.songCount = songProperties.count;
+    this.songAdjustedAverage = songProperties.average;
   }
 
   if (this.artists) {
-    this.artistCount = this.artists.length;
-    this.artistAdjustedAverage = this.artists.scoreAdjustedAverage();
+    var artistProperties = _properties(this.artists);
+    this.artistCount = artistProperties.count;
+    this.artistAdjustedAverage = artistProperties.average;
   }
 
 }
@@ -152,8 +153,8 @@ exports.rankEntities = function(entities,memberships,prefix) {
       if (entity) {
         if (!entity.ranks) entity.ranks = {};
         entity.ranks[prefix+":"+membershipKey] = {
-          "rank":member.rank,
-          "total":member.rankCount
+          "rank":member.__rank,
+          "total":member.__rankCount
         };
       }
     }
@@ -168,4 +169,11 @@ exports.bend = function(c) {
   return function(x) {
     return parseFloat(x)/(1-c+c*x);
   }
+}
+
+// trueArray: { : true }
+// source: {}
+exports.expandAndScore = function(trueArray,source) {
+  var expanded = _transform.expand(trueArray,source,_score);
+  return _sortAndRank(expanded);
 }
