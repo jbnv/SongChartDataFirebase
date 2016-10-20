@@ -434,9 +434,15 @@ function _transform(snapshot) {
   util.log("Ranking by year.");
   scoring.rankEntities(entities,years.export(),"year");
 
+  var scores = {};
+  for (var slug in entities) {
+    scores[slug] = entities[slug].score;
+  }
+
   return {
     "songs/compiled": entities,
     "songs/titles": titles,
+    "songs/scores": scores,
     "songs/errors": errors,
     "songs/by-artist": artists.export(),
     "songs/by-genre": genres.export(),
