@@ -1,10 +1,10 @@
 var chalk       = require("chalk"),
-    util        = require("gulp-util");
-    numeral     = require("numeral"),
+    util        = require("gulp-util"),
 
     Entity      = require('../../lib/entity'),
 
     data        = require('../data'),
+    display     = require('../display'),
     scoring     = require('../scoring'),
     transform   = require('../transform');
 
@@ -24,6 +24,7 @@ var _inputs = {
 var _outputs = [
   ["entities", "artists/compiled"],
   ["titles", "artists/titles"],
+  ["scores", "artists/scores"],
   ["errors", "artists/errors"]
 ];
 
@@ -112,14 +113,11 @@ function _transform(snapshot) {
       entity.xref = transform.expand(entity.xref,artists,_shallow);
     }
 
-    numeral.zeroFormat("");
-
     util.log(
-      chalk.blue(entity.instanceSlug),
+      chalk.blue(slug),
       entity.title,
-      chalk.gray(numeral(entity.songs.length).format("0")),
-      chalk.gray(numeral(entity.score || 0).format("0.00")),
-      chalk.gray(numeral(entity.songAdjustedAverage || 0).format("0.00"))
+      display.count(entity.songs),
+      display.number(entity.songAdjustedAverage)
     );
 
     entities[slug] = entity;
@@ -141,14 +139,21 @@ function _transform(snapshot) {
 
   entities = scoring.sortAndRank(entities,transform.sortBySongAdjustedAverage);
 
+  var scores = {};
+  for (var slug in entities) {
+    scores[slug] = entities[slug].songAdjustedAverage;
+  }
+
   return {
     "artists/compiled": entities,
     "artists/titles": titles,
+    "artists/scores": scores,
     "artists/errors": errors,
     "artists/by-genre": genres,
     "artists/by-origin": origins,
     "artists/by-tag": tags,
-    "artists/by-role": roles
+    "artists/by-role": roles,
+    "summary/artists/count": Object.keys(entities).length
   }
 
 }
