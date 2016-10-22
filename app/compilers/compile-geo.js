@@ -3,13 +3,15 @@ require("../polyfill");
 var _inputs = {
   "locations": "geo/raw",
   "artists": "artists/compiled",
-  "artists-raw": "artists/raw"
+  "artists-raw": "artists/raw",
+  "songs": "songs/compiled",
+  "songs-raw": "songs/raw"
 }
 
 var _outputs = [
-  ["entities", "locations/compiled"],
-  ["titles", "locations/titles"],
-  ["errors", "locations/errors"]
+  ["entities", "geo/compiled"],
+  ["titles", "geo/titles"],
+  ["errors", "geo/errors"]
 ];
 
 function _transform(snapshot) {
@@ -27,14 +29,18 @@ function _transform(snapshot) {
   var locations = snapshot[0].val() || {},
       allArtists = snapshot[1].val() || {},
       allArtistsRaw = snapshot[2].val() || {},
+      allSongs = snapshot[3].val() || {},
+      allSongsRaw = snapshot[4].val() || {},
 
       artistsBy = new Entity(),
+      songsByArtist = new Entity(),
 
       entities = {},
       titles = {},
       errors = {};
 
   artistsBy.extract("origin",allArtistsRaw,function(x) { return true; });
+  songsByArtist.extract("artists",allSongsRaw,function(x) { return true; });
 
   for (var slug in locations) {
     var entity = locations[slug];
@@ -42,8 +48,12 @@ function _transform(snapshot) {
     titles[slug] = entity.title;
 
     entity.artists = {};
+    entity.songs = {};
     for (var artistSlug in artistsBy.get(slug) || {}) {
       entity.artists[artistSlug] = allArtists[artistSlug];
+      for (var songSlug in (songsByArtist.get(artistSlug) || {})) {
+        entity.songs[songSlug] = allSongs[songSlug];
+      }
     }
 
     scoring.scoreCollection.call(entity);
@@ -52,7 +62,9 @@ function _transform(snapshot) {
       chalk.blue(slug),
       entity.title,
       display.count(entity.artists),
-      display.number(entity.artistAdjustedAverage)
+      display.number(entity.artistAdjustedAverage),
+      display.count(entity.songs),
+      display.number(entity.songAdjustedAverage)
     );
 
     entities[slug] = entity;
