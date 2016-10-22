@@ -50,7 +50,7 @@ function _transform(snapshot) {
   var chalk       = require("chalk"),
       util        = require("gulp-util"),
 
-      Entity      = require('../../lib/entity'),
+      Entity      = require('firehash'),
 
       display     = require('../display'),
       scoring     = require('../scoring'),
@@ -110,7 +110,7 @@ function _transform(snapshot) {
   process("tag",snapshot[7].val() || {});
 
   return {
-    "search/terms": entities.export(),
+    "search/terms": entities.get(),
     "search/errors": {}
   }
 

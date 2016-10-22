@@ -1,7 +1,9 @@
 var _inputs = {
   "genres": "genres/raw",
   "artists": "artists/compiled",
-  "songs": "songs/compiled"
+  "artists-raw": "artists/raw",
+  "songs": "songs/compiled",
+  "songs-raw": "songs/raw"
 }
 
 var _outputs = [
@@ -15,7 +17,7 @@ function _transform(snapshot) {
   var chalk       = require("chalk"),
       util        = require("gulp-util"),
 
-      Entity      = require('../../lib/entity'),
+      Entity      = require('firehash'),
 
       display     = require('../display'),
       scoring     = require('../scoring'),
@@ -25,17 +27,19 @@ function _transform(snapshot) {
 
   var genres = snapshot[0].val() || {},
       allArtists = snapshot[1].val() || {},
-      allSongs = snapshot[2].val() || {},
+      allArtistsRaw = snapshot[2].val() || {},
+      allSongs = snapshot[3].val() || {},
+      allSongsRaw = snapshot[4].val() || {},
 
-      artistsByGenre = new Entity(),
-      songsByGenre = new Entity();
+      artistsBy = new Entity(),
+      songsBy = new Entity();
 
   entities = {};
   titles = {};
   errors = {};
 
-  artistsByGenre.extract("genres",allArtists);
-  songsByGenre.extract("genres",allSongs);
+  artistsBy.extract("genres",allArtistsRaw,function(x) { return true; });
+  songsBy.extract("genres",allSongsRaw,function(x) { return true; });
 
   for (var slug in genres) {
 
@@ -43,8 +47,16 @@ function _transform(snapshot) {
 
     titles[slug] = entity.title;
 
-    entity.artists = artistsByGenre.get(slug) || {};
-    entity.songs = scoring.sortAndRank(songsByGenre.get(slug) || {});
+    entity.artists = {};
+    for (var artistSlug in artistsBy.get(slug) || {}) {
+      entity.artists[artistSlug] = allArtists[artistSlug];
+    }
+
+    entity.songs = {};
+    for (var songSlug in songsBy.get(slug) || {}) {
+      entity.songs[songSlug] = allSongs[songSlug];
+    }
+    entity.songs = scoring.sortAndRank(entity.songs);
 
     scoring.scoreCollection.call(entity);
 

@@ -9,8 +9,10 @@
     "cors": "^2.7.1",
     "express": "^4.13.4",
     "firebase": "^3.4.1",
+    "firehash": "^1.0.0",
     "fs": "0.0.2",
     "graceful-fs": "^4.1.3",
+    "gregoria": "^1.0.0",
     "gulp": "*",
     "gulp-concat": "*",
     "gulp-git": "~1.7.0",
@@ -28,6 +30,7 @@
     "numeral": "^1.5.3",
     "path": "^0.12.7",
     "q": "^1.4.1",
+    "supermatch": "^1.0.0",
     "vinyl-fs": "~2.4.3",
     "yargs": "^4.2.0"
   }

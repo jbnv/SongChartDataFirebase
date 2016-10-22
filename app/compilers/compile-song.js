@@ -4,9 +4,9 @@ var chalk       = require("chalk"),
     util        = require("gulp-util"),
     numeral     = require("numeral"),
 
-    Entity      = require('../../lib/entity'),
-    Era         = require('../../lib/era'),
-    _match       = require('../../lib/match'),
+    Entity      = require('firehash'),
+    Era         = require('gregoria'),
+    _match       = require('supermatch'),
 
     display     = require('../display'),
     scoring     = require('../scoring'),
@@ -75,7 +75,7 @@ function _prevalidate(slug,song) {
 // song: Entity
 function _postvalidate(slug,songEntity) {
 
-  var song = songEntity.export(), messages = {}
+  var song = songEntity.get(), messages = {}
 
   if (!song.title) {
     messages[slug+":title"] = {
@@ -256,7 +256,7 @@ function _transform(snapshot) {
     entity.setDefault("ascent-weeks",aggregates.averageAscent);
     entity.setDefault("descent-weeks",aggregates.averageDescent);
 
-    var songScored = scoring.score(entity.export());
+    var songScored = scoring.score(entity.get());
     entity.set("score",songScored.score);
     entity.set("duration",songScored.duration);
 
@@ -268,7 +268,7 @@ function _transform(snapshot) {
     var songArtists = entity.get("artists") || {};
     for (var artistSlug in songArtists) {
       var artistRole = songArtists[artistSlug] || {};
-      var entityClone = entity.export(); // need to actually make a copy here
+      var entityClone = entity.get(); // need to actually make a copy here
       delete entityClone.artists;
       entityClone.role = artistRole; //FUTURE artist.roleSlug;
       entityClone.scoreFactor = 1.00; //FUTURE artist.scoreFactor;
@@ -371,7 +371,7 @@ function _transform(snapshot) {
       display.number(entity.get("score"))
     );
 
-    entities[slug] = entity.export();
+    entities[slug] = entity.get();
   }
 
   util.log("Song processing complete.");
@@ -417,35 +417,35 @@ function _transform(snapshot) {
   /* Calculate song rankings on all terms.*/
 
   util.log("Ranking by artist.");
-  scoring.rankEntities(entities,artists.export(),"artist");
+  scoring.rankEntities(entities,artists.get(),"artist");
 
   util.log("Ranking by genre.");
-  scoring.rankEntities(entities,genres.export(),"genre");
+  scoring.rankEntities(entities,genres.get(),"genre");
 
   util.log("Ranking by playlist.");
-  scoring.rankEntities(entities,playlists.export(),"playlist");
+  scoring.rankEntities(entities,playlists.get(),"playlist");
 
   util.log("Ranking by source.");
-  scoring.rankEntities(entities,sources.export(),"source");
+  scoring.rankEntities(entities,sources.get(),"source");
 
   util.log("Ranking by decade.");
-  scoring.rankEntities(entities,decades.export(),"decade");
+  scoring.rankEntities(entities,decades.get(),"decade");
 
   util.log("Ranking by year.");
-  scoring.rankEntities(entities,years.export(),"year");
+  scoring.rankEntities(entities,years.get(),"year");
 
   return {
     "songs/compiled": entities,
     "songs/titles": titles,
     "songs/errors": errors,
-    "songs/by-artist": artists.export(),
-    "songs/by-genre": genres.export(),
-    "songs/by-tag": tags.export(),
-    "songs/by-playlist": playlists.export(),
-    "songs/by-source": sources.export(),
-    "songs/by-decade": decades.export(),
-    "songs/by-year": years.export(),
-    "songs/by-month": months.export(),
+    "songs/by-artist": artists.get(),
+    "songs/by-genre": genres.get(),
+    "songs/by-tag": tags.get(),
+    "songs/by-playlist": playlists.get(),
+    "songs/by-source": sources.get(),
+    "songs/by-decade": decades.get(),
+    "songs/by-year": years.get(),
+    "songs/by-month": months.get(),
     "songs/unscored": unscored,
     "summary/songs/count": Object.keys(entities).length
   }

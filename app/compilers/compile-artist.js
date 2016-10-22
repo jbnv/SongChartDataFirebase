@@ -2,9 +2,9 @@ var chalk       = require("chalk"),
     util        = require("gulp-util");
     numeral     = require("numeral"),
 
-    Entity      = require('../../lib/entity'),
+    Entity      = require('firehash'),
 
-    data        = require('../data'),
+    display     = require('../display'),
     scoring     = require('../scoring'),
     transform   = require('../transform');
 
@@ -56,6 +56,7 @@ function _transform(snapshot) {
 
     entity.songs = scoring.sortAndRank(songsByArtist[slug] || {});
     scoring.scoreCollection.call(entity);
+    entity.score = entity.songAdjustedAverage;
 
     var collaborators = new Entity();
     for (var songSlug in entity.songs) {
@@ -117,9 +118,8 @@ function _transform(snapshot) {
     util.log(
       chalk.blue(entity.instanceSlug),
       entity.title,
-      chalk.gray(numeral(entity.songs.length).format("0")),
-      chalk.gray(numeral(entity.score || 0).format("0.00")),
-      chalk.gray(numeral(entity.songAdjustedAverage || 0).format("0.00"))
+      display.count(entity.songs),
+      display.number(entity.songAdjustedAverage)
     );
 
     entities[slug] = entity;

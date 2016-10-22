@@ -20,7 +20,7 @@ function _transform(snapshot) {
   var chalk       = require("chalk"),
       util        = require("gulp-util"),
 
-      Entity      = require('../../lib/entity'),
+      Entity      = require('firehash'),
 
       display     = require('../display'),
       scoring     = require('../scoring'),
