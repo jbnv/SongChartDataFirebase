@@ -365,11 +365,11 @@ function _transform(snapshot) {
     var postvalidateMessages = _postvalidate(slug,entity) || {};
     entity.addMessage(postvalidateMessages);
 
-    util.log(
-      chalk.blue(slug),
-      entity.title(),
-      display.number(entity.get("score"))
-    );
+    // util.log(
+    //   chalk.blue(slug),
+    //   entity.title(),
+    //   display.number(entity.get("score"))
+    // );
 
     entities[slug] = entity.get();
   }
@@ -440,19 +440,15 @@ function _transform(snapshot) {
     era.songs = songsExpanded.map(function(songSlug) {
       return entities[songSlug];
     });
-    //console.log("[443]",slug,era.songs); //TEMP
     scoring.scoreCollection.call(era);
-    //console.log("[444]",slug,era); //TEMP
     return {count: era.songCount, score: era.songAdjustedAverage};
   }
 
   util.log("Summarizing decades.");
   var decadesSummary = decades.map(_processSongs);
-  //console.log(decadesSummary); //TEMP
 
   util.log("Summarizing years.");
   var yearsSummary = years.map(_processSongs);
-  console.log(yearsSummary); //TEMP
 
   util.log("Collecting scores.");
   var scores = {};
