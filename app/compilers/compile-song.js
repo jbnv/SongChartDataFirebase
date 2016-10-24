@@ -434,6 +434,27 @@ function _transform(snapshot) {
   util.log("Ranking by year.");
   scoring.rankEntities(entities,years.get(),"year");
 
+  function _processSongs(slug,songs) {
+    var songsExpanded = new Entity(songs);
+    var era = new Era(slug);
+    era.songs = songsExpanded.map(function(songSlug) {
+      return entities[songSlug];
+    });
+    //console.log("[443]",slug,era.songs); //TEMP
+    scoring.scoreCollection.call(era);
+    //console.log("[444]",slug,era); //TEMP
+    return {count: era.songCount, score: era.songAdjustedAverage};
+  }
+
+  util.log("Summarizing decades.");
+  var decadesSummary = decades.map(_processSongs);
+  //console.log(decadesSummary); //TEMP
+
+  util.log("Summarizing years.");
+  var yearsSummary = years.map(_processSongs);
+  console.log(yearsSummary); //TEMP
+
+  util.log("Collecting scores.");
   var scores = {};
   for (var slug in entities) {
     scores[slug] = entities[slug].score;
@@ -453,7 +474,9 @@ function _transform(snapshot) {
     "songs/by-year": years.get(),
     "songs/by-month": months.get(),
     "songs/unscored": unscored,
-    "summary/songs/count": Object.keys(entities).length
+    "summary/songs/count": Object.keys(entities).length,
+    "summary/decades": decadesSummary,
+    "summary/years": yearsSummary
   }
 
 }
