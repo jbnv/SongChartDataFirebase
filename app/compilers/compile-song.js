@@ -268,8 +268,7 @@ function _transform(snapshot) {
     var songArtists = entity.get("artists") || {};
     for (var artistSlug in songArtists) {
       var artistRole = songArtists[artistSlug] || {};
-      var entityClone = entity.get(); // need to actually make a copy here
-      delete entityClone.artists;
+      var entityClone = {score: songScored.score};
       entityClone.role = artistRole; //FUTURE artist.roleSlug;
       entityClone.scoreFactor = 1.00; //FUTURE artist.scoreFactor;
       switch (entityClone.role) {
