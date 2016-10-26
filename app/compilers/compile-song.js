@@ -220,8 +220,8 @@ function _transform(snapshot) {
       allPlaylists = snapshot[2].val() || {},
       allRoles = snapshot[3].val() || {},
       allTags = snapshot[4].val() || {},
-      allGenres = snapshot[3].val() || {},
-      allSources = snapshot[4].val() || {},
+      allGenres = snapshot[5].val() || {},
+      allSources = snapshot[6].val() || {},
 
       entities = {},
       titles = {},
