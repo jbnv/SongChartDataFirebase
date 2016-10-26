@@ -33,5 +33,8 @@
     "supermatch": "^1.0.0",
     "vinyl-fs": "~2.4.3",
     "yargs": "^4.2.0"
+  },
+  "devDependencies": {
+    "jasmine": "^2.5.2"
   }
 }
