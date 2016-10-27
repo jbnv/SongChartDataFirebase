@@ -11,9 +11,8 @@ require("../polyfill");
 
 var _inputs = {
   "artists": "artists/raw",
-  "songsByArtist": "songs/by-artist",
-  "tagsForArtist": "tags/for-artist",
   "songs": "songs/compiled",
+  "songs-raw": "songs/raw",
   "tags": "tags/raw",
   "roles": "roles/raw",
   "genres": "genres/raw",
@@ -31,30 +30,48 @@ function _transform(snapshot) {
 
   util.log(chalk.magenta("compile-artist.js"));
 
-  var artists = snapshot[0].val() || {};
-  var songsByArtist = snapshot[1].val() || {};
-  var tagsForArtist = snapshot[2].val() || {};
-  var allSongs = snapshot[3].val() || {};
-  var allTags = snapshot[4].val() || {};
-  var allRoles = snapshot[5].val() || {};
-  var allGenres = snapshot[6].val() || {};
-  var allLocations = snapshot[7].val() || {};
-  var allArtistTypes = require("../models/artist-types") || {};
+  var artists = snapshot[0].val() || {},
+      allSongs = snapshot[1].val() || {},
+      allSongsRaw = snapshot[2].val() || {},
+      allTags = snapshot[3].val() || {},
+      allRoles = snapshot[4].val() || {},
+      allGenres = snapshot[5].val() || {},
+      allLocations = snapshot[6].val() || {},
+      allArtistTypes = require("../models/artist-types") || {},
 
-  entities = {};
-  titles = {};
-  errors = [];
-  roles = new Entity(),
-  genres = new Entity(),
-  origins = new Entity(),
-  tags = new Entity();
+      songsBy = new Entity();
+
+      entities = {},
+      titles = {},
+      errors = [],
+      roles = new Entity(),
+      genres = new Entity(),
+      origins = new Entity(),
+      tags = new Entity();
+
+  songsBy.extract("artists",allSongsRaw,function(x) { return true; });
 
   for (var slug in artists) {
     var entity = artists[slug];
 
     titles[slug] = entity.title;
 
-    entity.songs = scoring.sortAndRank(songsByArtist[slug] || {});
+    entity.songs = {};
+    for (var songSlug in songsBy.get(slug) || {}) {
+      var song = allSongs[songSlug];
+      var role = allSongsRaw[songSlug].artists[slug];
+      var scoreFactor = scoring.scoreFactor(role);
+      entity.songs[songSlug] = {
+        title: song.title,
+        role: role,
+        scoreFactor: scoreFactor,
+        totalScore: song.score,
+        score: song.score * scoreFactor
+      }
+      //console.log("[61]",entity.songs[songSlug]);
+    }
+    entity.songs = scoring.sortAndRank(entity.songs);
+
     scoring.scoreCollection.call(entity);
     entity.score = entity.songAdjustedAverage;
 
@@ -127,13 +144,13 @@ function _transform(snapshot) {
   /* Calculate song rankings on all terms.*/
 
   util.log("Ranking by genre.");
-  scoring.rankEntities(entities,genres.export(),"genre");
+  scoring.rankEntities(entities,genres.get(),"genre");
 
   util.log("Ranking by origin.");
-  scoring.rankEntities(entities,origins.export(),"origin");
+  scoring.rankEntities(entities,origins.get(),"origin");
 
   util.log("Ranking by tag.");
-  scoring.rankEntities(entities,tags.export(),"tag");
+  scoring.rankEntities(entities,tags.get(),"tag");
 
   util.log("Artist processing complete.");
 

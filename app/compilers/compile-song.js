@@ -267,26 +267,20 @@ function _transform(snapshot) {
 
     var songArtists = entity.get("artists") || {};
     for (var artistSlug in songArtists) {
-      var artistRole = songArtists[artistSlug] || {};
-      var entityClone = {score: songScored.score};
-      entityClone.role = artistRole; //FUTURE artist.roleSlug;
-      entityClone.scoreFactor = 1.00; //FUTURE artist.scoreFactor;
-      switch (entityClone.role) {
-        case true: entityClone.scoreFactor = 1.00; break;
-        case "feature": entityClone.scoreFactor = 0.20; break;
-        case "lead": entityClone.scoreFactor = 0.75; break;
-        case "backup": entityClone.scoreFactor = 0.10; break;
-        case "writer": entityClone.scoreFactor = 1.00; break;
-        case "producer": entityClone.scoreFactor = 0.50; break;
-        case "sample": entityClone.scoreFactor = 0.1; break;
-        case "remake": entityClone.scoreFactor = 0.1; break;
-        case "remix": entityClone.scoreFactor = 0.25; break;
-        default: entityClone.scoreFactor = 0.25;
-      }
-      entityClone.totalScore = entityClone.score;
-      if (entityClone.score) entityClone.score *= entityClone.scoreFactor;
+
       var artist = allArtists[artistSlug] || {};
+      var artistRole = songArtists[artistSlug] || {};
+
+      var scoreFactor = artist.scoreFactor || scoring.scoreFactor(artistRole);
+      var entityClone = {
+        role: artistRole, //FUTURE artist.roleSlug;
+        scoreFactor: scoreFactor,
+        totalScore: songScored.score,
+        score: songScored.score * scoreFactor
+      };
+
       artists.push(artistSlug,slug,entityClone);
+
       entity.push("artists",artistSlug,{
         title: artist.title || "NOT FOUND",
         type: artist.type || null,
@@ -297,6 +291,7 @@ function _transform(snapshot) {
         //   .map(function(tag) { return (tag || {}).instanceSlug; })
         //   .filter(function(tag) { return tag; })
       });
+
     }
 
     try {
@@ -364,11 +359,11 @@ function _transform(snapshot) {
     var postvalidateMessages = _postvalidate(slug,entity) || {};
     entity.addMessage(postvalidateMessages);
 
-    // util.log(
-    //   chalk.blue(slug),
-    //   entity.title(),
-    //   display.number(entity.get("score"))
-    // );
+    util.log(
+      chalk.blue(slug),
+      entity.title(),
+      display.number(entity.get("score"))
+    );
 
     entities[slug] = entity.get();
   }

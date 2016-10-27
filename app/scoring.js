@@ -178,3 +178,18 @@ exports.expandAndScore = function(trueArray,source) {
   var expanded = _transform.expand(trueArray,source,_score);
   return _sortAndRank(expanded);
 }
+
+exports.scoreFactor = function(role) {
+  switch (role) {
+    case true: return 1.00;
+    case "feature": return 0.20;
+    case "lead": return 0.75;
+    case "backup": return 0.10;
+    case "writer": return 1.00;
+    case "producer": return 0.50;
+    case "sample": return 0.1;
+    case "remake": return 0.1;
+    case "remix": return 0.25;
+  }
+  return 0.233; // an odd number to make it clear that the role wasn't found.
+}
