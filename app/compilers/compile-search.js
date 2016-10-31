@@ -58,7 +58,7 @@ function _transform(snapshot) {
 
   util.log(chalk.magenta("compile-search.js"));
 
-  var entities = new Entity();
+  var entities = {};
 
   function process(typeSlug,inboundEntities) {
 
@@ -78,24 +78,7 @@ function _transform(snapshot) {
             "artistCount": Object.keys(entity.artists || {}).length
           };
 
-      // Entity does not have explicit search terms: Imply from title.
-      var entityTerms = function(e) {
-        if (e.searchTerms) return Object.keys(e.searchTerms);
-        if (e["search-terms"]) return Object.keys(e["search-terms"]);
-        if (e.title) return (""+e.title || "").toLowerCase().split(" ");
-        return [];
-      }(entity);
-
-      unique(entityTerms).forEach(function(term) {
-
-        substrings = term.transmute();
-        if (!substrings) return;
-
-        substrings.forEach(function(substring) {
-          entities.push(substring,routeSlug,ref);
-        });
-
-      }); // entityTerms
+      entities[routeSlug] = ref;
 
     }
   }
@@ -110,7 +93,7 @@ function _transform(snapshot) {
   process("tag",snapshot[7].val() || {});
 
   return {
-    "search/terms": entities.get(),
+    "search/entities": entities,
     "search/errors": {}
   }
 
