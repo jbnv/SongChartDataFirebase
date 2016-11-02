@@ -2,6 +2,9 @@
   "name": "song-charts-data",
   "version": "1.0.0",
   "description": "Data for the SongCharts program.",
+  "scripts": {
+    "test": "node_modules/.bin/jasmine"
+  },
   "dependencies": {
     "body-parser": "~1.15.0",
     "chalk": "^1.1.1",

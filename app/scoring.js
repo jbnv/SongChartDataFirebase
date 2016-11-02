@@ -3,16 +3,9 @@
 require("./polyfill");
 var _transform = require("./transform");
 
-function round000(n) {
-  return Math.round(parseFloat(n)*1000)/1000;
-}
-
 function _sortAndRank(list,sortFn) {
   return _transform.sortObject(list,sortFn || _transform.sortByScore);
 }
-
-exports.up = function(score) { return 2*score/(score+1); }
-exports.down = function(score) { return score/(2-score); }
 
 exports.sortAndRank = _sortAndRank;
 
@@ -165,7 +158,7 @@ exports.rankEntities = function(entities,memberships,prefix) {
   }
 }
 
-exports.bend = function(c) {
+function _bend(c) {
   if (c == 0) return function(x) { return x };
   if (c > 0) return function(x) {
     return (c+1)*x/(c*x+1);
@@ -174,6 +167,10 @@ exports.bend = function(c) {
     return parseFloat(x)/(1-c+c*x);
   }
 }
+
+exports.bend = _bend;
+exports.up = _bend(1);
+exports.down = _bend(-1);
 
 // trueArray: { : true }
 // source: {}
