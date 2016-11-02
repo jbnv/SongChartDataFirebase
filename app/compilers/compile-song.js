@@ -256,7 +256,7 @@ function _transform(snapshot) {
     entity.setDefault("ascent-weeks",aggregates.averageAscent);
     entity.setDefault("descent-weeks",aggregates.averageDescent);
 
-    var songScored = scoring.score(entity.get());
+    var songScored = scoring.scoreSong(entity.get());
     entity.set("score",songScored.score);
     entity.set("duration",songScored.duration);
 
@@ -275,8 +275,8 @@ function _transform(snapshot) {
       var entityClone = {
         role: artistRole, //FUTURE artist.roleSlug;
         scoreFactor: scoreFactor,
-        totalScore: songScored.score,
-        score: songScored.score * scoreFactor
+        totalScore: songScored.score || null,
+        score: (songScored.score || 0) * (scoreFactor || 0)
       };
 
       artists.push(artistSlug,slug,entityClone);
