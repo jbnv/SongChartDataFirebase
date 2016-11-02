@@ -198,6 +198,27 @@ firebase.auth().signInWithEmailAndPassword(fbConfig.email,fbConfig.password)
       }
     ));
 
+    processArguments("z",_unary(
+      "zero",
+      function(entity) {
+        return {peak: 0.001, "ascent-weeks": 0.001, "descent-weeks": 0.001};
+      }
+    ));
+
+    processArguments("c",function(slug) {
+      if (!slug) return;
+      var ref = db.ref("songs/raw").child(slug);
+      ref.child("peak").set(null);
+      ref.child("ascent-weeks").set(null);
+      ref.child("descent-weeks").set(null);
+
+      util.log(
+        chalk.green("clear"),
+        chalk.blue(slug),
+        (songs[slug] || {}).title
+      );
+    });
+
     // if (yargs.argv.all) {
     //
     //   var artistsTransformedCount = 0;
