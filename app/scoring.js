@@ -9,12 +9,24 @@ function _sortAndRank(list,sortFn) {
 
 exports.sortAndRank = _sortAndRank;
 
-// Scoring criteria:
-// Debut score (D): Higher score (lower number) is better.
-// Peak score (P): Higher score (lower number) is better.
-// Duration (M): More is better.
+function _score() {
 
-function _score(inbound,scoringOptions) {
+  var peak = arguments[0] || 0,
+      ascentWeeks = arguments[1] || 0,
+      descentWeeks = arguments[2] || 0;
+
+  if (typeof arguments[0] == "object") {
+    peak = arguments[0].peak || 0;
+    ascentWeeks = arguments[0]["ascent-weeks"] || 0;
+    descentWeeks = arguments[0]["descent-weeks"] || 0;
+  }
+
+  return (2/3) * peak * (ascentWeeks+descentWeeks);
+}
+
+exports.score = _score;
+
+function _scoreSong(inbound,scoringOptions) {
 
   var outbound = {};
 
@@ -28,7 +40,7 @@ function _score(inbound,scoringOptions) {
   outbound.ascentWeeks = ascentWeeks;
   outbound.descentWeeks = descentWeeks;
 
-  outbound.score = (2/3) * outbound.peak * (ascentWeeks+descentWeeks);
+  outbound.score = _score(outbound.peak,ascentWeeks,descentWeeks)
 
 	outbound.duration = Math.ceil(
     (ascentWeeks+descentWeeks) * 7 / 30.4375
@@ -52,7 +64,7 @@ function _score(inbound,scoringOptions) {
 	return outbound;
 }
 
-exports.score = _score;
+exports.scoreSong = _scoreSong;
 
 // this: song collection
 exports.scoreCollection = function() {
@@ -175,7 +187,7 @@ exports.down = _bend(-1);
 // trueArray: { : true }
 // source: {}
 exports.expandAndScore = function(trueArray,source) {
-  var expanded = _transform.expand(trueArray,source,_score);
+  var expanded = _transform.expand(trueArray,source,_scoreSong);
   return _sortAndRank(expanded);
 }
 

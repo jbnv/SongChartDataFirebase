@@ -1,5 +1,26 @@
 var scoring = require("../app/scoring");
 
+describe("score()", function() {
+
+  it("scores from literal parameters", function() {
+    expect(scoring.score()).toEqual(0);
+    expect(scoring.score(0.3)).toEqual(0);
+    expect(scoring.score(0.3,1)).toBeCloseTo(0.2,3);
+    expect(scoring.score(0.3,1,1)).toBeCloseTo(0.4,3);
+  });
+
+  it("scores from an object, even if object is incomplete", function() {
+    expect(scoring.score({})).toEqual(0);
+    expect(scoring.score({peak:1})).toBeCloseTo(scoring.score(1),3);
+    expect(scoring.score({"ascent-weeks":1})).toBeCloseTo(scoring.score(0,1),3);
+    expect(scoring.score({"descent-weeks":1})).toBeCloseTo(scoring.score(0,0,1),3);
+    expect(scoring.score({peak:1,"ascent-weeks":1})).toBeCloseTo(scoring.score(1,1),3);
+    expect(scoring.score({peak:1,"descent-weeks":1})).toBeCloseTo(scoring.score(1,0,1),3);
+    expect(scoring.score({peak:1,"ascent-weeks":1,"descent-weeks":1})).toBeCloseTo(scoring.score(1,1,1),3);
+  });
+
+});
+
 describe("up() (bend(1)())", function() {
 
   it("returns 0 for 0", function() {
