@@ -106,7 +106,7 @@ function _transform(snapshot) {
     });
 
     function _transformByList(typeSlug,aggregation,all) {
-      aggregation = transform.byList(aggregation,slug,entity.get(typeSlug));
+      aggregation.set(transform.byList(aggregation.get(),slug,entity.get(typeSlug)));
       entity.expand(typeSlug, all);
     }
 
@@ -149,14 +149,17 @@ function _transform(snapshot) {
 
   /* Calculate song rankings on all terms.*/
 
-  util.log("Ranking by genre.");
-  scoring.rankEntities(entities,genres.get(),"genre");
-
   util.log("Ranking by origin.");
   scoring.rankEntities(entities,origins.get(),"origin");
 
+  util.log("Ranking by genre.");
+  scoring.rankEntities(entities,genres.get(),"genre");
+
   util.log("Ranking by tag.");
   scoring.rankEntities(entities,tags.get(),"tag");
+
+  util.log("Ranking by role.");
+  scoring.rankEntities(entities,roles.get(),"role");
 
   util.log("Artist processing complete.");
 
