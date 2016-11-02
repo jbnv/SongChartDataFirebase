@@ -52,67 +52,78 @@ function _transform(snapshot) {
   songsBy.extract("artists",allSongsRaw,function(x) { return true; });
 
   for (var slug in artists) {
-    var entity = artists[slug];
+    var entity = new Entity(artists[slug]);
 
-    titles[slug] = entity.title;
+    titles[slug] = entity.get("title");
 
-    entity.songs = {};
+    var entitySongs = {};
     for (var songSlug in songsBy.get(slug) || {}) {
       var song = allSongs[songSlug];
       var role = allSongsRaw[songSlug].artists[slug];
       var scoreFactor = scoring.scoreFactor(role);
-      entity.songs[songSlug] = {
+      if (!song) continue;
+      entitySongs[songSlug] = {
         title: song.title,
         role: role,
         scoreFactor: scoreFactor,
         totalScore: song.score,
-        score: song.score * scoreFactor
+        score: song.score * scoreFactor,
+        peak: song.peak || null,
+        debut: song.debut || null,
+        "ascent-weeks": song["ascent-weeks"] || null,
+        "descent-weeks": song["descent-weeks"] || null
       }
-      //console.log("[61]",entity.songs[songSlug]);
     }
-    entity.songs = scoring.sortAndRank(entity.songs);
+    entitySongs = scoring.sortAndRank(entitySongs);
+    entity.set("songs",entitySongs);
 
-    scoring.scoreCollection.call(entity);
-    entity.score = entity.songAdjustedAverage;
+    var entityScorer = entity.get();
+    scoring.scoreCollection.call(entityScorer);
+    entity.set("score", entityScorer.songAdjustedAverage);
 
     var collaborators = new Entity();
-    for (var songSlug in entity.songs) {
+    for (var songSlug in entity.get("songs")) {
       var songEntity = allSongs[songSlug] || {};
       for (var artistSlug in (songEntity.artists || {})) {
         if (artistSlug == slug) continue;
         collaborators.push(artistSlug,songSlug,songEntity);
       }
     }
-    entity.collaborators = {};
     collaborators.forEach(function(artistSlug,artistEntity) {
+      var artistSongsAsArray = [];
+      for (var songSlug in (collaborators.get(artistSlug) || {})) {
+        artistSongsAsArray.push(collaborators.get(artistSlug)[songSlug]);
+      }
+      var artist = artists[artistSlug] || {};
       var outbound = {
-        slug: artistSlug,
-        title: artistEntity.title || "MISSING '"+artistSlug+"'",
-        songCount: Object.keys(collaborators.get(artistSlug) || {}).length
-        //TEMP score: collaborators[artistSlug].scoreAdjustedAverage()
+        title: artist.title || null,
+        type: artist.type || null,
+        roles: artist.roles || null,
+        songCount: artistSongsAsArray.length,
+        score: artistSongsAsArray.scoreAdjustedAverage()
       };
-      entity.collaborators[artistSlug] = outbound;
+      entity.push("collaborators",artistSlug,outbound);
     });
 
-    tags = transform.byList(tags,slug,entity.tags);
-    entity.tags = transform.expand(entity.tags,allTags);
-
-    roles = transform.byList(roles,slug,entity.roles);
-    entity.roles = transform.expand(entity.roles,allRoles);
-
-    genres = transform.byList(genres,slug,entity.genres);
-    entity.genres = transform.expand(entity.genres,allGenres);
-
-    var origin = entity.origin;
-    if (origin) {
-      origins.push(origin,slug,true);
-      entity.origin = allLocations[origin] || origin;
+    function _transformByList(typeSlug,aggregation,all) {
+      aggregation = transform.byList(aggregation,slug,entity.get(typeSlug));
+      entity.expand(typeSlug, all);
     }
 
-    if (entity.type) {
-      var typeSlug = entity.type;
-      entity.type = allArtistTypes[typeSlug];
-      entity.type.slug = typeSlug;
+    _transformByList("tags",tags,allTags);
+    _transformByList("roles",roles,allRoles);
+    _transformByList("genres",genres,allGenres);
+
+    var origin = entity.get("origin");
+    if (origin) {
+      origins.push(origin,slug,true);
+      entity.set("origin",allLocations[origin] || origin);
+    }
+
+    var typeSlug = entity.get("type");
+    if (typeSlug) {
+      entity.set("type",allArtistTypes[typeSlug]);
+      entity.get("type").slug = typeSlug;
     }
 
     // Make a shallow copy to prevent circular references.
@@ -122,22 +133,17 @@ function _transform(snapshot) {
       };
     }
 
-    if (entity.members) {
-      entity.members = transform.expand(entity.members,artists,_shallow);
-    }
-
-    if (entity.xref) {
-      entity.xref = transform.expand(entity.xref,artists,_shallow);
-    }
+    entity.expand("members",artists,_shallow);
+    entity.expand("xref",artists,_shallow);
 
     util.log(
       chalk.blue(slug),
-      entity.title,
-      display.count(entity.songs),
-      display.number(entity.songAdjustedAverage)
+      entity.title(),
+      display.count(entity.get("songs")),
+      display.number(entity.get("score"))
     );
 
-    entities[slug] = entity;
+    entities[slug] = entity.get();
 
   }
 
