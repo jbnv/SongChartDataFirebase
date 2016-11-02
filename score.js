@@ -11,20 +11,6 @@ var chalk       = require("chalk"),
 require('./app/polyfill');
 
 
-function unary(task,fn) {
-  return function(slug) {
-    var entity = read(slug);
-    fn(entity);
-    write(slug,entity);
-
-    util.log(
-      chalk.green(task),
-      chalk.blue(slug),
-      entity.title
-    );
-  }
-}
-
 function unaryWithModifier(task,fn) {
   return function(slugColonModifier) {
     var split = (""+slugColonModifier).split(":"),
@@ -84,20 +70,6 @@ function interpolate(tuple) {
 //   function(entity) { entity.scores = false; }
 // );
 
-var bendUp = unary(
-  "up",
-  function(entity) {
-    entity.peak = scoring.up(entity.peak);
-  }
-);
-
-var bendDown = unary(
-  "down",
-  function(entity) {
-    entity.peak = scoring.down(entity.peak);
-  }
-);
-
 function processArguments(flag,fn) {
   arg = yargs.argv[flag];
   if (arg) {
@@ -128,11 +100,57 @@ firebase.auth().signInWithEmailAndPassword(fbConfig.email,fbConfig.password)
         db = firebase.database();
 
     function _write(slug,song) {
+      if (!slug || !song) return;
       var ref = db.ref("songs/raw").child(slug);
-      ref.child("peak").set(song.peak);
-      ref.child("ascent-weeks").set(song["ascent-weeks"]);
-      ref.child("descent-weeks").set(song["descent-weeks"]);
+      if (song.peak)
+        ref.child("peak").set(song.peak);
+      if (song["ascent-weeks"])
+        ref.child("ascent-weeks").set(song["ascent-weeks"]);
+      if (song["descent-weeks"])
+        ref.child("descent-weeks").set(song["descent-weeks"]);
     }
+
+    function _unary(task,fn) {
+      return function(slug) {
+
+        var entity = songs[slug];
+
+        if (!entity) {
+          util.log(
+            chalk.green(task),
+            chalk.blue(slug),
+            chalk.red("ERROR"),
+            "No entity for this slug."
+          );
+          return;
+        }
+
+        var result = fn(entity);
+
+        if (!result) {
+          util.log(
+            chalk.green(task),
+            chalk.blue(slug),
+            entity.title,
+            chalk.red("ERROR"),
+            "No result returned."
+          );
+          return;
+        }
+
+        _write(slug,result);
+
+        util.log(
+          chalk.green(task),
+          chalk.blue(slug),
+          entity.title,
+          chalk.gray(result["peak"]),
+          chalk.gray(result["ascent-weeks"]),
+          chalk.gray(result["descent-weeks"])
+        );
+      }
+    }
+
 
     processArguments("s",
 
@@ -163,12 +181,22 @@ firebase.auth().signInWithEmailAndPassword(fbConfig.email,fbConfig.password)
 
     // processArguments("i",interpolate);
     //
-    // // processArguments("c",clear);
-    // // processArguments("z",zero);
     //
-    // processArguments("u",bendUp);
-    //
-    // processArguments("d",bendDown);
+    processArguments("u",_unary(
+      "up",
+      function(entity) {
+        if (!entity) return null;
+        return {peak: scoring.up(entity.peak)};
+      }
+    ));
+
+    processArguments("d",_unary(
+      "down",
+      function(entity) {
+        if (!entity) return null;
+        return {peak: scoring.down(entity.peak)};
+      }
+    ));
 
     // if (yargs.argv.all) {
     //
