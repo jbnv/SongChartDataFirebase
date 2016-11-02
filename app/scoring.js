@@ -11,6 +11,9 @@ function _sortAndRank(list,sortFn) {
   return _transform.sortObject(list,sortFn || _transform.sortByScore);
 }
 
+exports.up = function(score) { return 2*score/(score+1); }
+exports.down = function(score) { return score/(2-score); }
+
 exports.sortAndRank = _sortAndRank;
 
 // Scoring criteria:
