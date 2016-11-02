@@ -205,3 +205,39 @@ exports.scoreFactor = function(role) {
   }
   return 0.233; // an odd number to make it clear that the role wasn't found.
 }
+
+
+function _swap() {
+
+  function _clone(obj) {
+    return {
+      peak: obj.peak,
+      "ascent-weeks": obj["ascent-weeks"],
+      "descent-weeks": obj["descent-weeks"]
+    }
+  }
+
+  var entityA = _clone(arguments[0]);
+  var entityB = _clone(arguments[1]);
+
+  // Strategy: Keep the peaks and ascent; scale the descents to swap the scores.
+
+  var ascentA = entityA["ascent-weeks"] || 0;
+  var ascentB = entityB["ascent-weeks"] || 0;
+
+  var descentA = entityA["descent-weeks"] || 0;
+  var descentB = entityB["descent-weeks"] || 0;
+
+  var scoreA = entityA.peak * (ascentA + descentA);
+  var scoreB = entityB.peak * (ascentB + descentB);
+
+  entityA["descent-weeks"] = scoreB / entityA.peak - ascentA;
+  entityB["descent-weeks"] = scoreA / entityB.peak - ascentB;
+
+  if (entityA["descent-weeks"] < 1)  entityA["descent-weeks"] = 1;
+  if (entityB["descent-weeks"] < 1)  entityB["descent-weeks"] = 1;
+
+  return [entityA,entityB];
+}
+
+exports.swap = _swap;

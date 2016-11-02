@@ -56,3 +56,29 @@ describe("down() (bend(-1)())", function() {
   });
 
 });
+
+describe("swap()", function() {
+
+  it("swaps the scores of two objects", function() {
+
+    blah = {peak: 1, "ascent-weeks": 1, "descent-weeks": 4};
+    yada = {peak: 1, "ascent-weeks": 1, "descent-weeks": 5.5};
+    swapped = scoring.swap(blah,yada);
+
+    expect(swapped[0]).toEqual({peak: 1, "ascent-weeks": 1, "descent-weeks": 5.5});
+    expect(swapped[1]).toEqual({peak: 1, "ascent-weeks": 1, "descent-weeks": 4});
+
+  });
+
+  it("swaps the scores of two objects", function() {
+
+    blah = {peak: 1, "ascent-weeks": 1, "descent-weeks": 5}; // score = 4
+    yada = {peak: 0.5, "ascent-weeks": 1, "descent-weeks": 14}; // score = 5
+    swapped = scoring.swap(blah,yada);
+
+    expect(swapped[0]).toEqual({peak: 1, "ascent-weeks": 1, "descent-weeks": 6.5});
+    expect(swapped[1]).toEqual({peak: 0.5, "ascent-weeks": 1, "descent-weeks": 11});
+
+  });
+
+});
