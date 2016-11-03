@@ -428,6 +428,9 @@ function _transform(snapshot) {
   util.log("Ranking by year.");
   scoring.rankEntities(entities,years.get(),"year");
 
+  util.log("Ranking all.");
+  scoring.rankEntities(entities);
+
   function _processSongs(slug,songs) {
     var songsExpanded = new Entity(songs);
     var era = new Era(slug);

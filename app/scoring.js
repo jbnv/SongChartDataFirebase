@@ -148,6 +148,23 @@ exports.aggregateCollection = function() {
 // memberships.
 // prefix: A prefix to add to the slug to make the ranking slug.
 exports.rankEntities = function(entities,memberships,prefix) {
+  if (!memberships) {
+    // Rank the entire set.
+    var members = _sortAndRank(entities);
+    for (var key in members) {
+      var entity = members[key];
+      if (entity) {
+        if (!entity.ranks) entity.ranks = {};
+        entity.ranks.overall = {
+          "title":"Overall",
+          "rank":entity.__rank,
+          "total":entity.__rankCount
+        };
+      }
+    }
+    return;
+  }
+
   for (var membershipKey in memberships) {
     // Transform membership keys.
     var members = {};
