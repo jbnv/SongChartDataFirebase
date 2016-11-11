@@ -21,6 +21,18 @@ describe("score()", function() {
 
 });
 
+describe("bend()()", function() {
+
+  it("returns a higher value for higher coefficient", function() {
+    expect(scoring.bend(1)(0.5)).toBeGreaterThan(scoring.bend(0.5)(0.5));
+  });
+
+  it("returns a lower value for lower coefficient", function() {
+    expect(scoring.bend(-1)(0.5)).toBeLessThan(scoring.bend(-0.5)(0.5));
+  });
+
+});
+
 describe("up() (bend(1)())", function() {
 
   it("returns 0 for 0", function() {
