@@ -59,7 +59,7 @@ function _transform(snapshot) {
     var era = new Era(song.debut);
 
     if (era.decade) {
-      decades.push(era.decade,songSlug,{score: song.score || 0});
+      decades.push(""+era.decade+"s",songSlug,{score: song.score || 0});
     }
 
     if (era.year) {
@@ -67,7 +67,7 @@ function _transform(snapshot) {
     }
 
     if (era.month) {
-      months.push(era.month,songSlug,{score: song.score || 0});
+      months.push(era.slug,songSlug,{score: song.score || 0});
     }
 
     //TODO weeks
@@ -88,10 +88,10 @@ function _transform(snapshot) {
     })
   }
 
-  var decadesOutbound = _aggregate(decades);
-
   return {
-    "decades": decadesOutbound
+    "decades": _aggregate(decades),
+    "years": _aggregate(years),
+    "months": _aggregate(months)
   }
 
 }
