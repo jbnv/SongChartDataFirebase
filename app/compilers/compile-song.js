@@ -441,32 +441,11 @@ function _transform(snapshot) {
     return {count: era.songCount, score: era.songAdjustedAverage};
   }
 
-  function _aggregateEra(collection) {
-    var maxCount = 1; // ensure that divisor is always greater than 0
-    var maxAA = 0.01;
-
-    for (var slug in collection) {
-      var item = collection[slug];
-      if (item.count > maxCount) maxCount = item.count;
-      if (item.score > maxAA) maxAA = item.score;
-    }
-
-    for (var slug in collection) {
-      var item = collection[slug];
-      item.r = (item.score/maxAA)/(item.count/maxCount);
-      item.leader = (item.r >= 1.2);
-      item.lagger = (item.r <= 0.8);
-    }
-
-    return collection;
-
-  }
-
   util.log("Summarizing decades.");
-  var decadesSummary = _aggregateEra(decades.map(_processSongs));
+  var decadesSummary = transform.aggregateEra(decades.map(_processSongs));
 
   util.log("Summarizing years.");
-  var yearsSummary = _aggregateEra(years.map(_processSongs));
+  var yearsSummary = transform.aggregateEra(years.map(_processSongs));
 
   util.log("Collecting scores.");
   var scores = {};

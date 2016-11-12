@@ -24,7 +24,8 @@ function _transform(snapshot) {
       Era         = require('gregoria'),
 
       display     = require('../display'),
-      scoring     = require('../scoring');
+      scoring     = require('../scoring'),
+      transform   = require('../transform');
 
   util.log(chalk.magenta("compile-eras.js"));
 
@@ -96,14 +97,14 @@ function _transform(snapshot) {
   // Write data.
 
   function _aggregate(firehash) {
-    return firehash.map(function(slug,era) {
+    return transform.aggregateEra(firehash.map(function(slug,era) {
       var keys = Object.keys(era);
       return {
         count: keys.length,
         score: keys.map(function(key) { return era[key]; }).scoreAdjustedAverage(),
         songs: era
       }
-    })
+    }));
   }
 
   return {
