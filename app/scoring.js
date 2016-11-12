@@ -24,7 +24,45 @@ function _score() {
   return (2/3) * peak * (ascentWeeks+descentWeeks);
 }
 
+function _cumulativeScale(weeks,ascentWeeks,descentWeeks) {
+
+  if (weeks <= 0) { return 0; }
+
+  if (weeks < ascentWeeks) {
+    return Math.pow(weeks,2)/ascentWeeks - Math.pow(weeks,3)/Math.pow(ascentWeeks,2)/3 ;
+  }
+  if (weeks < ascentWeeks+descentWeeks) {
+    return (2/3) * ascentWeeks + (weeks-ascentWeeks) - Math.pow(weeks-ascentWeeks,3)/3/descentWeeks/descentWeeks
+  }
+  return (2/3) * (ascentWeeks+descentWeeks);
+}
+
+function _scoreForSpan() {
+
+  if (arguments.length < 1) return 0;
+
+  var song = arguments[0],
+      startWeek = arguments[1] || 0,
+      endWeek = arguments[2] || 0;
+
+  var ascentWeeks = song["ascent-weeks"] || 0,
+      descentWeeks = song["descent-weeks"] || 0;
+
+  return song.peak * (_cumulativeScale(endWeek,ascentWeeks,descentWeeks) - _cumulativeScale(startWeek,ascentWeeks,descentWeeks));
+}
+
 exports.score = _score;
+exports.scoreForSpan = _scoreForSpan;
+
+exports.cumulativeScore = function() {
+
+  var song = arguments[0], week = arguments[1];
+
+  if (!song || !week) return 0;
+
+  return song.peak * _cumulativeScale(week,song["ascent-weeks"],song["descent-weeks"]);
+
+}
 
 function _scoreSong(inbound,scoringOptions) {
 

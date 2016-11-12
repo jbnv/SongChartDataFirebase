@@ -94,3 +94,72 @@ describe("swap()", function() {
   });
 
 });
+
+describe("cumulativeScore()", function() {
+
+  const ascentWeeks = 3, descentWeeks = 5;
+  const song = {"peak":1, "ascent-weeks": ascentWeeks, "descent-weeks": descentWeeks};
+
+  it("returns 0 for no parameters", function() {
+    expect(scoring.cumulativeScore()).toEqual(0);
+  });
+
+  it("returns 1 if only a song specified", function() {
+    expect(scoring.cumulativeScore(song)).toEqual(0);
+  });
+
+  it("returns gradually-increasing values", function() {
+    expect(scoring.cumulativeScore(song,ascentWeeks/3)).toBeGreaterThan(scoring.cumulativeScore(song,0));
+    expect(scoring.cumulativeScore(song,ascentWeeks)).toBeGreaterThan(scoring.cumulativeScore(song,ascentWeeks/3));
+    expect(scoring.cumulativeScore(song,ascentWeeks+descentWeeks)).toBeGreaterThan(scoring.cumulativeScore(song,ascentWeeks));
+  });
+
+  it("equals score() at the end of the period", function() {
+    expect(scoring.cumulativeScore(song,ascentWeeks+descentWeeks))
+    .toBeCloseTo(scoring.score(song));
+  });
+
+  it("returns the same value after the end of the period", function() {
+    expect(scoring.cumulativeScore(song,ascentWeeks+descentWeeks+1))
+    .toEqual(scoring.cumulativeScore(song,ascentWeeks+descentWeeks));
+  });
+
+});
+
+describe("scoreForSpan()", function() {
+
+  const ascentWeeks = 3, descentWeeks = 5;
+  const song = {"peak":1, "ascent-weeks": ascentWeeks, "descent-weeks": descentWeeks};
+
+  const
+    halfAscent = ascentWeeks/2,
+    peak = ascentWeeks,
+    halfDescent = ascentWeeks + descentWeeks/2,
+    fullDescent = ascentWeeks + descentWeeks;
+
+  it("returns gradually-increasing values on the ascent", function() {
+    expect(scoring.scoreForSpan(song,0,halfAscent))
+    .toBeLessThan(scoring.scoreForSpan(song,halfAscent,peak));
+  });
+
+  it("returns gradually-decreasing values on the descent", function() {
+    expect(scoring.scoreForSpan(song,peak,halfDescent))
+    .toBeGreaterThan(scoring.scoreForSpan(song,halfDescent,fullDescent));
+  });
+
+  it("returns the greatest value at the peak", function() {
+
+    var atPeak = scoring.scoreForSpan(song,peak-0.5,peak+0.5);
+    var duringAscent = scoring.scoreForSpan(song,halfAscent-0.5,halfAscent+0.5);
+    var duringDescent = scoring.scoreForSpan(song,halfDescent-0.5,halfDescent+0.5);
+
+    expect(atPeak).toBeGreaterThan(duringAscent);
+    expect(atPeak).toBeGreaterThan(duringDescent);
+  });
+
+  it("returns 0 for spans outside of the range", function() {
+    expect(scoring.scoreForSpan(song,-1,0)).toEqual(0);
+    expect(scoring.scoreForSpan(song,ascentWeeks+descentWeeks,ascentWeeks+descentWeeks+1)).toEqual(0);
+  });
+
+});
