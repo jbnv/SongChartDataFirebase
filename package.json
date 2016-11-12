@@ -30,6 +30,7 @@
     "is-array": "^1.0.1",
     "is-function": "^1.0.1",
     "jsonpretty": "0.0.1",
+    "moment": "^2.16.0",
     "numeral": "^1.5.3",
     "path": "^0.12.7",
     "q": "^1.4.1",
