@@ -102,7 +102,12 @@ function _transform(snapshot) {
       return {
         count: keys.length,
         score: keys.map(function(key) { return era[key]; }).scoreAdjustedAverage(),
-        songs: era
+        songs: era,
+        topsong: keys.reduce(function(prev,cur) {
+          if (!prev) return cur;
+          if (era[cur].score > era[prev].score) return cur;
+          return prev;
+        })
       }
     }));
   }
