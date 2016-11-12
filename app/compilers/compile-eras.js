@@ -1,29 +1,18 @@
 require("../polyfill");
+var moment = require("moment");
 
 var _inputs = {
-  "songs": "songs/compiled"
+  "songs": "songs/raw"
 }
 
 var _outputs = [
   ["entities", "decades"]
 ];
 
-function _forDecade(era) {
-  era.songs = meta.getCompiledObject("song","by-decade")()[era.slug] || [];
-  scoring.scoreCollection.call(era);
-  return era;
-}
-
-function _forYear(era) {
-  era.songs = meta.getCompiledObject("song","by-year")()[era.slug] || [];
-  scoring.scoreCollection.call(era);
-  return era;
-}
-
-function _forMonth(era) {
-  era.songs = meta.getCompiledObject("song","by-month")()[era.slug] || [];
-  scoring.scoreCollection.call(era);
-  return era;
+function _parseSlug(slug) {
+  if (!slug) return null;
+  if (/^\d\d\d\d-\d\d$/.test(slug)) slug = slug + "-01";
+  return moment(slug,"YYYY-MM-DD");
 }
 
 function _transform(snapshot) {
@@ -52,26 +41,43 @@ function _transform(snapshot) {
       weeks = new Firehash(),
       days = new Firehash();
 
+  const weekSeconds = 7 * 24 * 3600;
+
   // Aggregate data across songs.
   for (var songSlug in allSongs) {
     var song = allSongs[songSlug];
     if (!song.debut) continue;
     var era = new Era(song.debut);
 
+    var score = scoring.score(song);
+
     if (era.decade) {
-      decades.push(""+era.decade+"s",songSlug,{score: song.score || 0});
+      decades.push(""+era.decade+"s",songSlug,{score: score || 0});
     }
 
     if (era.year) {
-      years.push(era.year,songSlug,{score: song.score || 0});
+      years.push(era.year,songSlug,{score: score || 0});
     }
 
-    if (era.month) {
-      months.push(era.slug,songSlug,{score: song.score || 0});
-    }
+    if (/^\d\d\d\d-\d\d/.test(era.slug)) {
 
-    //TODO weeks
-    //TODO days
+      // Get the start and end date of the month.
+      var debutDate = _parseSlug(era.slug);
+      var endDate = moment(debutDate).add(song["ascent-weeks"]+song["descent-weeks"], 'weeks');
+
+      var debutDateUnix = debutDate.unix(); // seconds in Unix Epoch
+
+      for (var month = moment(debutDate).startOf('month') ; month.isBefore(endDate) ; month.add(1, "month")) {
+        var startWeeks = (month.unix() - debutDate.unix()) / weekSeconds;
+        var endWeeks = startWeeks + (month.daysInMonth()/7);
+        var periodScore = scoring.scoreForSpan(song,startWeeks,endWeeks);
+        months.push(month.format("YYYY-MM"),songSlug,{score: periodScore || 0});
+      }
+
+      //TODO weeks
+      //TODO days
+
+    }
 
   }
 
