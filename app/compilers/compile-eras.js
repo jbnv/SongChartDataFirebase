@@ -56,7 +56,19 @@ function _transform(snapshot) {
     }
 
     if (era.year) {
-      years.push(era.year,songSlug,{score: score || 0});
+
+      var debutDate = _parseSlug(era.slug);
+      var endDate = moment(debutDate).add(song["ascent-weeks"]+song["descent-weeks"], 'weeks');
+
+      var debutDateUnix = debutDate.unix(); // seconds in Unix Epoch
+
+      for (var year = moment(debutDate).startOf('year') ; year.isBefore(endDate) ; year.add(1, "year")) {
+        var startWeeks = (year.unix() - debutDate.unix()) / weekSeconds;
+        var endWeeks = startWeeks + ((year.isLeapYear() ? 366 : 365)/7);
+        var periodScore = scoring.scoreForSpan(song,startWeeks,endWeeks);
+        years.push(year.format("YYYY"),songSlug,{score: periodScore || 0});
+      }
+
     }
 
     if (/^\d\d\d\d-\d\d/.test(era.slug)) {
