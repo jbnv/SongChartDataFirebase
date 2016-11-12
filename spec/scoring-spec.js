@@ -137,6 +137,16 @@ describe("scoreForSpan()", function() {
     halfDescent = ascentWeeks + descentWeeks/2,
     fullDescent = ascentWeeks + descentWeeks;
 
+  it("values add up to total score", function() {
+    var sumOfPartials
+      = scoring.scoreForSpan(song,0,halfAscent)
+      + scoring.scoreForSpan(song,halfAscent,peak)
+      + scoring.scoreForSpan(song,peak,halfDescent)
+      + scoring.scoreForSpan(song,halfDescent,fullDescent);
+
+    expect(sumOfPartials).toBeCloseTo(scoring.score(song));
+  });
+
   it("returns gradually-increasing values on the ascent", function() {
     expect(scoring.scoreForSpan(song,0,halfAscent))
     .toBeLessThan(scoring.scoreForSpan(song,halfAscent,peak));
