@@ -73,10 +73,25 @@ function _transform(snapshot) {
     if (/^\d\d\d\d-\d\d/.test(era.slug)) {
 
       for (var month = moment(debutDate).startOf('month') ; month.isBefore(endDate) ; month.add(1, "month")) {
+        var monthEnd = moment(month).endOf('month');
+
         var startWeeks = (month.unix() - debutDate.unix()) / weekSeconds;
         var endWeeks = startWeeks + (month.daysInMonth()/7);
         var periodScore = scoring.scoreForSpan(song,startWeeks,endWeeks);
-        months.push(month.format("YYYY-MM"),songSlug,{score: periodScore || 0});
+
+        var peakMoment = moment(debutDate).add(song["ascent-weeks"], 'weeks');
+
+        var outbound = {
+          // debut: debutDate.format("YYYY-MM-DD"),
+          // peak: peakMoment.format("YYYY-MM-DD"),
+          score: periodScore || 0
+        };
+
+        outbound.isDebut = debutDate.isBetween(month,monthEnd,'day','[]'); // inclusive
+        outbound.isAscending = peakMoment.isAfter(monthEnd);
+        outbound.isDescending = peakMoment.isBefore(month);
+
+        months.push(month.format("YYYY-MM"),songSlug,outbound);
       }
 
       //TODO weeks
