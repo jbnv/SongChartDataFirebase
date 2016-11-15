@@ -54,6 +54,7 @@ function _transform(snapshot) {
     var score = scoring.score(song);
     var debutDate = _parseSlug(song.debut);
     var endDate = moment(debutDate).add(song["ascent-weeks"]+song["descent-weeks"], 'weeks');
+    var peakMoment = moment(debutDate).add(song["ascent-weeks"], 'weeks');
 
     if (era.decade) {
       decades.push(""+era.decade+"s",songSlug,{score: score || 0});
@@ -79,8 +80,6 @@ function _transform(snapshot) {
         var endWeeks = startWeeks + (month.daysInMonth()/7);
         var periodScore = scoring.scoreForSpan(song,startWeeks,endWeeks);
 
-        var peakMoment = moment(debutDate).add(song["ascent-weeks"], 'weeks');
-
         var outbound = {
           // debut: debutDate.format("YYYY-MM-DD"),
           // peak: peakMoment.format("YYYY-MM-DD"),
@@ -92,6 +91,23 @@ function _transform(snapshot) {
         outbound.isDescending = peakMoment.isBefore(month);
 
         months.push(month.format("YYYY-MM"),songSlug,outbound);
+      }
+
+      for (var day = moment(debutDate), weeks = 0 ; day.isBefore(endDate) ; day.add(1, "day"), weeks += 0.142857142857) {
+        var periodScore = scoring.scoreForSpan(song,weeks,weeks + 0.142857142857);
+
+
+        var outbound = {
+          // debut: debutDate.format("YYYY-MM-DD"),
+          // peak: peakMoment.format("YYYY-MM-DD"),
+          score: periodScore || 0
+        };
+
+        outbound.isDebut = day.isSame(debutDate);
+        outbound.isAscending = day.isBefore(peakMoment);
+        outbound.isDescending = day.isAfter(peakMoment);
+
+        days.push(day.format("YYYY-MM-DD"),songSlug,outbound);
       }
 
       //TODO weeks
@@ -122,7 +138,8 @@ function _transform(snapshot) {
   return {
     "decades": _aggregate(decades),
     "years": _aggregate(years),
-    "months": _aggregate(months)
+    "months": _aggregate(months),
+    "days": _aggregate(days)
   }
 
 }
