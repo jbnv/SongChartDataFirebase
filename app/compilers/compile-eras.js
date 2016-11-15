@@ -10,7 +10,7 @@ var _outputs = [
 ];
 
 function _parseSlug(slug) {
-  if (!slug) return null;
+  if (!slug || /^\d\d\d0s$/.test(slug) || /^\d\d\d\d$/.test(slug)) return null;
   if (/^\d\d\d\d-\d\d$/.test(slug)) slug = slug + "-01";
   return moment(slug,"YYYY-MM-DD");
 }
@@ -43,6 +43,7 @@ function _transform(snapshot) {
       days = new Firehash();
 
   const weekSeconds = 7 * 24 * 3600;
+  const noop = function() {};
 
   // Aggregate data across songs.
   for (var songSlug in allSongs) {
@@ -51,17 +52,14 @@ function _transform(snapshot) {
     var era = new Era(song.debut);
 
     var score = scoring.score(song);
+    var debutDate = _parseSlug(song.debut);
+    var endDate = moment(debutDate).add(song["ascent-weeks"]+song["descent-weeks"], 'weeks');
 
     if (era.decade) {
       decades.push(""+era.decade+"s",songSlug,{score: score || 0});
     }
 
     if (era.year) {
-
-      var debutDate = _parseSlug(era.slug);
-      var endDate = moment(debutDate).add(song["ascent-weeks"]+song["descent-weeks"], 'weeks');
-
-      var debutDateUnix = debutDate.unix(); // seconds in Unix Epoch
 
       for (var year = moment(debutDate).startOf('year') ; year.isBefore(endDate) ; year.add(1, "year")) {
         var startWeeks = (year.unix() - debutDate.unix()) / weekSeconds;
@@ -73,12 +71,6 @@ function _transform(snapshot) {
     }
 
     if (/^\d\d\d\d-\d\d/.test(era.slug)) {
-
-      // Get the start and end date of the month.
-      var debutDate = _parseSlug(era.slug);
-      var endDate = moment(debutDate).add(song["ascent-weeks"]+song["descent-weeks"], 'weeks');
-
-      var debutDateUnix = debutDate.unix(); // seconds in Unix Epoch
 
       for (var month = moment(debutDate).startOf('month') ; month.isBefore(endDate) ; month.add(1, "month")) {
         var startWeeks = (month.unix() - debutDate.unix()) / weekSeconds;
