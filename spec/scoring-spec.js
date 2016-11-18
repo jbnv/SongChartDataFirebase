@@ -173,3 +173,26 @@ describe("scoreForSpan()", function() {
   });
 
 });
+
+describe("distribute()", function() {
+
+  var songs = {
+    "blah": { peak: 1, "ascent-weeks": 1, "descent-weeks": 4},
+    "yada": { peak: 0.8, "ascent-weeks": 1, "descent-weeks": 4},
+    "hoot": { peak: 0.6, "ascent-weeks": 1, "descent-weeks": 4}
+  }
+
+  var distributedSongs = scoring.distribute(songs);
+
+  it("keeps the scores in order", function() {
+    expect(distributedSongs.blah.score).toBeGreaterThan(distributedSongs.yada.score);
+    expect(distributedSongs.yada.score).toBeGreaterThan(distributedSongs.hoot.score);
+  });
+
+  it("keeps the sum of the scores the same", function() {
+    var originalSum = scoring.scoreSum(songs);
+    var newSum = scoring.scoreSum(distributedSongs);
+    expect(originalSum).toBeCloseTo(newSum);
+  });
+
+});

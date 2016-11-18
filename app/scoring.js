@@ -64,6 +64,15 @@ exports.cumulativeScore = function() {
 
 }
 
+function _scoreSum(songs) {
+  if (Array.isArray(songs)) {
+    return songs.reduce(function(sum,song) { return sum+_score(song); }, 0);
+  }
+  return Object.keys(songs).reduce(function(sum,key) { return sum+_score(songs[key]); }, 0);
+}
+
+exports.scoreSum = _scoreSum;
+
 function _scoreSong(inbound,scoringOptions) {
 
   var outbound = {};
@@ -261,6 +270,9 @@ exports.scoreFactor = function(role) {
   return 0.233; // an odd number to make it clear that the role wasn't found.
 }
 
+function _adjustDescent(song,newScore) {
+  song["descent-weeks"] = 1.5 * newScore / song.peak - song["ascent-weeks"];
+}
 
 function _swap() {
 
@@ -296,3 +308,42 @@ function _swap() {
 }
 
 exports.swap = _swap;
+
+function _distribute(songObject) {
+
+  var songCount = Object.keys(songObject).length;
+  var songArray = [];
+
+  // Determine the number of objects and the total score.
+  var totalScore = 0;
+  for (var slug in songObject) {
+    var song = songObject[slug];
+    songArray.push({
+      "slug": slug,
+      "peak": song.peak,
+      "ascent-weeks": song["ascent-weeks"],
+      "descent-weeks": song["descent-weeks"],
+      "score":_score(song)
+    });
+    totalScore += _score(song);
+  }
+
+  // Order by score ascending to use index in factor.
+  songArray.sort(function(a,b) { return a.score - b.score; });
+
+  // Average and apply the average to each score.
+  var factor = totalScore / Math.pow(songCount,2);
+
+  var outbound = {};
+  songArray.forEach(function(song,index) {
+    var newScore = factor * (2*index+1);
+    _adjustDescent(song,newScore);
+    song.score = _score(song);
+    outbound[song.slug] = song;
+  });
+
+  return outbound;
+
+}
+
+exports.distribute = _distribute;
