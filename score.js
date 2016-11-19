@@ -101,13 +101,23 @@ firebase.auth().signInWithEmailAndPassword(fbConfig.email,fbConfig.password)
 
     function _write(slug,song) {
       if (!slug || !song) return;
-      var ref = db.ref("songs/raw").child(slug);
+
+      let queryRaw = db.ref("songs/raw").child(slug);
       if (song.peak)
-        ref.child("peak").set(song.peak);
+        queryRaw.child("peak").set(song.peak);
       if (song["ascent-weeks"])
-        ref.child("ascent-weeks").set(song["ascent-weeks"]);
+        queryRaw.child("ascent-weeks").set(song["ascent-weeks"]);
       if (song["descent-weeks"])
-        ref.child("descent-weeks").set(song["descent-weeks"]);
+        queryRaw.child("descent-weeks").set(song["descent-weeks"]);
+
+      let queryCompiled = db.ref("songs/compiled").child(slug);
+      if (song.peak)
+        queryCompiled.child("peak").set(song.peak);
+      if (song["ascent-weeks"])
+        queryCompiled.child("ascent-weeks").set(song["ascent-weeks"]);
+      if (song["descent-weeks"])
+        queryCompiled.child("descent-weeks").set(song["descent-weeks"]);
+      queryCompiled.child("score").set(_score(song));
     }
 
     function _unary(task,fn) {
