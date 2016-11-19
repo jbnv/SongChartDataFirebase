@@ -66,7 +66,14 @@ function _transform(snapshot) {
         var startWeeks = (year.unix() - debutDate.unix()) / weekSeconds;
         var endWeeks = startWeeks + ((year.isLeapYear() ? 366 : 365)/7);
         var periodScore = scoring.scoreForSpan(song,startWeeks,endWeeks);
-        years.push(year.format("YYYY"),songSlug,{score: periodScore || 0});
+        var totalScore = scoring.score(song);
+
+        var outbound = {
+          score: periodScore || 0,
+          isPartial: periodScore != totalScore
+        };
+
+        years.push(year.format("YYYY"),songSlug,outbound);
       }
 
     }
