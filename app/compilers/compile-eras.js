@@ -10,8 +10,10 @@ var _outputs = [
 ];
 
 function _parseSlug(slug) {
-  if (!slug || /^\d\d\d0s$/.test(slug) || /^\d\d\d\d$/.test(slug)) return null;
-  if (/^\d\d\d\d-\d\d$/.test(slug)) slug = slug + "-01";
+  if (!slug) return null;
+  if (/^\d\d\d0s$/.test(slug)) return moment(slug.substring(0,3),"YYYY");
+  if (/^\d\d\d\d$/.test(slug)) return moment(slug,"YYYY");
+  if (/^\d\d\d\d-\d\d$/.test(slug)) return moment(slug,"YYYY-MM");
   return moment(slug,"YYYY-MM-DD");
 }
 
@@ -57,7 +59,24 @@ function _transform(snapshot) {
     var peakMoment = moment(debutDate).add(song["ascent-weeks"], 'weeks');
 
     if (era.decade) {
-      decades.push(""+era.decade+"s",songSlug,{score: score || 0});
+
+      var decade = moment(debutDate).startOf('year');
+      decade.add(-(decade.year()%10),'year');
+
+      for ( ; decade.isBefore(endDate) ; decade.add(10, "year") ) {
+        var startWeeks = (decade.unix() - debutDate.unix()) / weekSeconds;
+        var endWeeks = startWeeks + (3652.5/7);
+        var periodScore = scoring.scoreForSpan(song,startWeeks,endWeeks);
+        var totalScore = scoring.score(song);
+
+        var outbound = {
+          score: periodScore || 0,
+          isPartial: Math.abs(periodScore-totalScore) > 0.01
+        };
+
+        decades.push(""+decade.format("YYYY")+"s",songSlug,outbound);
+      }
+
     }
 
     if (era.year) {
