@@ -70,7 +70,7 @@ function _transform(snapshot) {
 
         var outbound = {
           score: periodScore || 0,
-          isPartial: periodScore != totalScore
+          isPartial: Math.abs(periodScore-totalScore) > 0.01
         };
 
         years.push(year.format("YYYY"),songSlug,outbound);

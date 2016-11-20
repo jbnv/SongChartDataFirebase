@@ -48,6 +48,7 @@ function _scoreForSpan() {
   var ascentWeeks = song["ascent-weeks"] || 0,
       descentWeeks = song["descent-weeks"] || 0;
 
+  if (!song.peak) return 0;
   return song.peak * (_cumulativeScale(endWeek,ascentWeeks,descentWeeks) - _cumulativeScale(startWeek,ascentWeeks,descentWeeks));
 }
 
