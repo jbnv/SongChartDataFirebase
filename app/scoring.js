@@ -348,3 +348,50 @@ function _distribute(songObject) {
 }
 
 exports.distribute = _distribute;
+
+function _normalize(songObject) {
+
+  var songArray = [];
+
+  // Determine the number of objects, max/min peak and the total score.
+  var songCount = 0, totalScore = 0, minPeak = 1, maxPeak = 0;
+  for (var slug in songObject) {
+    var song = songObject[slug];
+    if (!song.peak || !song["ascent-weeks"]) continue;
+    songArray.push({
+      "slug": slug,
+      "peak": song.peak,
+      "ascent-weeks": song["ascent-weeks"],
+      "descent-weeks": song["descent-weeks"] || 0,
+      "score":_score(song)
+    });
+    songCount++;
+    if (song.peak < minPeak) minPeak = song.peak;
+    if (song.peak > maxPeak) maxPeak = song.peak;
+    totalScore += _score(song);
+  }
+
+  if (songCount === 0) return {};
+  if (songCount === 1) {
+    var outbound = {};
+    outbound[songArray[0].slug] = songArray[0];
+    return outbound;
+  };
+
+  // Order by score ascending to use index in factor.
+  songArray.sort(function(a,b) { return a.score - b.score; });
+
+  // Set the peaks for each song.
+
+  var outbound = {};
+  songArray.forEach(function(song,index) {
+    song.peak = minPeak + (maxPeak - minPeak)*index/(songCount-1);
+    _adjustDescent(song,song.score);
+    outbound[song.slug] = song;
+  });
+
+  return outbound;
+
+}
+
+exports.normalize = _normalize;
