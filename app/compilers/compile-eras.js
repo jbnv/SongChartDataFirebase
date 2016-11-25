@@ -40,6 +40,7 @@ function _transform(snapshot) {
 
       decades = new Firehash(), //count: 0, score: 0, songs: {}
       years = new Firehash(),
+      seasons = new Firehash(),
       months = new Firehash(),
       weeks = new Firehash(),
       days = new Firehash();
@@ -98,6 +99,24 @@ function _transform(snapshot) {
     }
 
     if (/^\d\d\d\d-\d\d/.test(era.slug)) {
+
+      var season = moment(debutDate).startOf('month');
+      season.add(-(season.month()%3),'month');
+
+      for ( ; season.isBefore(endDate) ; season.add(3, "month") ) {
+        var startWeeks = (season.unix() - debutDate.unix()) / weekSeconds;
+        var endWeeks = startWeeks + (365.25/4);
+        var periodScore = scoring.scoreForSpan(song,startWeeks,endWeeks);
+        var totalScore = scoring.score(song);
+
+        var outbound = {
+          score: periodScore || 0,
+          isPartial: Math.abs(periodScore-totalScore) > 0.01
+        };
+
+        var seasonSlug = season.format("YYYY")+"-"+['winter','spring','summer','fall'][Math.floor(season.month()/3)];
+        seasons.push(seasonSlug,songSlug,outbound);
+      }
 
       for (var month = moment(debutDate).startOf('month') ; month.isBefore(endDate) ; month.add(1, "month")) {
         var monthEnd = moment(month).endOf('month');
@@ -164,6 +183,7 @@ function _transform(snapshot) {
   return {
     "decades": _aggregate(decades),
     "years": _aggregate(years),
+    "seasons": _aggregate(seasons),
     "months": _aggregate(months),
     "days": _aggregate(days)
   }
