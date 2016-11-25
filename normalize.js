@@ -1,5 +1,6 @@
 var chalk       = require("chalk"),
     firebase    = require("firebase"),
+    gregoria    = require("gregoria"),
     q           = require("q"),
     util        = require("gulp-util"),
     yargs       = require('yargs'),
@@ -49,13 +50,25 @@ firebase.auth().signInWithEmailAndPassword(fbConfig.email,fbConfig.password)
     if (typeof scope === "string") {
 
       // Determine filter function.
-      var filterFn = function() { return true; }
+      var filterFn = function() { return false; }
       var scopePieces = scope.split(":");
       switch(scopePieces[0]) {
         case "artist": filterFn = songTools.hasArtist(scopePieces[1]); break;
         case "genre": filterFn = songTools.hasGenre(scopePieces[1]); break;
         case "playlist": filterFn = songTools.hasPlaylist(scopePieces[1]); break;
         case "source": filterFn = songTools.hasSource(scopePieces[1]); break;
+        case "decade":
+          filterFn = function(song) {
+            var era = new gregoria(song.debut);
+            return era.decade == scopePieces[1];
+          }
+          break;
+        case "year":
+          filterFn = function(song) {
+            var era = new gregoria(song.debut);
+            return era.year == scopePieces[1];
+          }
+          break;
       }
 
       scope = [];
@@ -64,7 +77,7 @@ firebase.auth().signInWithEmailAndPassword(fbConfig.email,fbConfig.password)
       }
     }
 
-    if (!Array.isArray(scope)) throw "Scope is not an array!";
+    if (!Array.isArray(scope)) throw "Scope is not valid.";
 
     var subset = scope.reduce(function(prev,cur) {
       prev[cur] = allSongs[cur]; return prev;

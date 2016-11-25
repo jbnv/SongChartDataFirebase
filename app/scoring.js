@@ -1,7 +1,8 @@
 // Middleware for scoring and ranking.
 
 require("./polyfill");
-var _transform = require("./transform");
+var numeral = require("numeral"),
+    _transform = require("./transform");
 
 function _sortAndRank(list,sortFn) {
   return _transform.sortObject(list,sortFn || _transform.sortByScore);
@@ -385,7 +386,8 @@ function _normalize(songObject) {
 
   var outbound = {};
   songArray.forEach(function(song,index) {
-    song.peak = minPeak + (maxPeak - minPeak)*index/(songCount-1);
+    var newPeak = minPeak + (maxPeak - minPeak)*index/(songCount-1);
+    song.peak = parseFloat(numeral(newPeak).format("0.000"));
     _adjustDescent(song,song.score);
     outbound[song.slug] = song;
   });
