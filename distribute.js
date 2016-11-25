@@ -11,17 +11,6 @@ var chalk       = require("chalk"),
 
 require('./app/polyfill');
 
-function processArguments(flag,fn) {
-  arg = yargs.argv[flag];
-  if (arg) {
-    if (arg.constructor === Array) {
-      arg.forEach(fn);
-    } else {
-      fn(arg);
-    }
-  }
-}
-
 // Initialize Firebase.
 firebase.initializeApp(fbConfig.initConfig);
 
