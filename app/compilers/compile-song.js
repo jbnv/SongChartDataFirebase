@@ -10,7 +10,9 @@ var chalk       = require("chalk"),
 
     display     = require('../display'),
     scoring     = require('../scoring'),
-    transform   = require('../transform');
+    transform   = require('../transform'),
+
+    argv        = require("yargs").argv;
 
 require("../polyfill");
 
@@ -359,12 +361,14 @@ function _transform(snapshot) {
     var postvalidateMessages = _postvalidate(slug,entity) || {};
     entity.addMessage(postvalidateMessages);
 
-    util.log(
-      chalk.blue(slug),
-      entity.title(),
-      display.number(entity.get("score"))
-    );
-
+    if (argv.v || argv.verbose) {
+      util.log(
+        chalk.blue(slug),
+        entity.title(),
+        display.number(entity.get("score"))
+      );
+    }
+    
     entities[slug] = entity.get();
   }
 

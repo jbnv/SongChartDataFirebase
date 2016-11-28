@@ -5,7 +5,9 @@ var chalk       = require("chalk"),
 
     display     = require('../display'),
     scoring     = require('../scoring'),
-    transform   = require('../transform');
+    transform   = require('../transform'),
+
+    argv        = require("yargs").argv;
 
 require("../polyfill");
 
@@ -136,13 +138,15 @@ function _transform(snapshot) {
     entity.expand("members",artists,_shallow);
     entity.expand("xref",artists,_shallow);
 
-    util.log(
-      chalk.blue(slug),
-      entity.title(),
-      display.count(entity.get("songs")),
-      display.number(entity.get("score"))
-    );
-
+    if (argv.v || argv.verbose) {
+      util.log(
+        chalk.blue(slug),
+        entity.title(),
+        display.count(entity.get("songs")),
+        display.number(entity.get("score"))
+      );
+    }
+    
     entities[slug] = entity.get();
 
   }

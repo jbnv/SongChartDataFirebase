@@ -20,7 +20,9 @@ function _transform(snapshot) {
 
       display     = require('../display'),
       scoring     = require('../scoring'),
-      transform   = require('../transform');
+      transform   = require('../transform'),
+
+      argv        = require("yargs").argv;
 
   util.log(chalk.magenta("compile-playlist.js"));
 
@@ -44,6 +46,13 @@ function _transform(snapshot) {
         entity.songs[song.__slug] = song;
       }
     };
+
+    if (entity["use-custom-filter"]) {
+      var matchFn = require("./playlist/"+slug).match;
+      filter = function(song) {
+        if (matchFn(song)) { entity.songs[song.__slug] = song; }
+      };
+    }
 
     if (entity.filter) {
       // Check the keys on the filter object to determine what we are doing with it.
@@ -81,12 +90,14 @@ function _transform(snapshot) {
     entity.songs = scoring.sortAndRank(entity.songs);
     scoring.scoreCollection.call(entity);
 
-    util.log(
-      chalk.blue(slug),
-      entity.title,
-      display.count(entity.songs),
-      display.number(entity.songAdjustedAverage)
-    );
+    if (argv.v || argv.verbose) {
+      util.log(
+        chalk.blue(slug),
+        entity.title,
+        display.count(entity.songs),
+        display.number(entity.songAdjustedAverage)
+      );
+    }
 
     entities[slug] = entity;
 
