@@ -21,7 +21,7 @@ firebase.auth().signInWithEmailAndPassword(fbConfig.email,fbConfig.password)
   var data = require('./app/data')(firebase);
 
   return data.getBatch({
-    "songs": "songs/raw",
+    "songs": "songs/compiled",
   })
   .then(function(snapshot) {
     var allSongs = snapshot[0].val() || {},
