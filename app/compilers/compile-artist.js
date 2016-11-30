@@ -58,6 +58,11 @@ function _transform(snapshot) {
 
     titles[slug] = entity.get("title");
 
+    var songCount = 0;
+    var totalPeak = 0.0;
+    var totalAscent = 0.0;
+    var totalDescent = 0.0;
+
     var entitySongs = {};
     for (var songSlug in songsBy.get(slug) || {}) {
       var song = allSongs[songSlug];
@@ -75,9 +80,20 @@ function _transform(snapshot) {
         "ascent-weeks": song["ascent-weeks"] || null,
         "descent-weeks": song["descent-weeks"] || null
       }
+      songCount++;
+      totalPeak += parseFloat(song.peak || 0);
+      totalAscent += parseFloat(song["ascent-weeks"] || 0);
+      totalDescent += parseFloat(song["descent-weeks"] || 0);
     }
     entitySongs = scoring.sortAndRank(entitySongs);
     entity.set("songs",entitySongs);
+
+    if (songCount) {
+      entity.set("average-peak",totalPeak/songCount);
+      entity.set("average-ascent-weeks",totalAscent/songCount);
+      entity.set("average-descent-weeks",totalDescent/songCount);
+      console.log(slug,songCount,totalPeak,totalAscent,totalDescent);
+    }
 
     var entityScorer = entity.get();
     scoring.scoreCollection.call(entityScorer);
@@ -146,7 +162,7 @@ function _transform(snapshot) {
         display.number(entity.get("score"))
       );
     }
-    
+
     entities[slug] = entity.get();
 
   }
