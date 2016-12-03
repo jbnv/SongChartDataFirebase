@@ -9,6 +9,9 @@ function Song(yargs) {
 
   this.debut = argv.d;
   this.source = argv.source || null;
+  this.peak = argv.peak || null;
+  this["ascent-weeks"] = argv.ascent || null;
+  this["descent-weeks"] = argv.descent || null;
   e.array_argument("genres","g");
   e.array_argument("playlists","p");
 
@@ -48,8 +51,8 @@ Song.prototype.typeNoun = "song";
 Song.prototype.parameters = {
   "a":"Artist, with optional role.",
   "d":"Debut date.",
-  "g":"Genre.",
-  "r":"Ranks (as array of values).",
+  "g":"Genre(s).",
+  "p":"Playlist(s).",
   "s":"Slug. (Req)",
   "t":"Name of the breed. (Req)"
 }
