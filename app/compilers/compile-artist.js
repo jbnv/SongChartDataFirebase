@@ -18,7 +18,8 @@ var _inputs = {
   "tags": "tags/raw",
   "roles": "roles/raw",
   "genres": "genres/raw",
-  "locations": "geo/raw"
+  "locations": "geo/raw",
+  "song-median": "summary/songs/median"
 }
 
 var _outputs = [
@@ -39,6 +40,7 @@ function _transform(snapshot) {
       allRoles = snapshot[4].val() || {},
       allGenres = snapshot[5].val() || {},
       allLocations = snapshot[6].val() || {},
+      songMedian =  snapshot[7].val() || {},
       allArtistTypes = require("../models/artist-types") || {},
 
       songsBy = new Entity();
@@ -49,7 +51,9 @@ function _transform(snapshot) {
       roles = new Entity(),
       genres = new Entity(),
       origins = new Entity(),
-      tags = new Entity();
+      tags = new Entity(),
+
+      songMedianScore = scoring.score(songMedian);
 
   songsBy.extract("artists",allSongsRaw,function(x) { return true; });
 
@@ -89,15 +93,18 @@ function _transform(snapshot) {
     entity.set("songs",entitySongs);
 
     if (songCount) {
+      var expectedScore = songMedianScore * Math.sqrt(songCount);
       entity.set("average-peak",totalPeak/songCount);
       entity.set("average-ascent-weeks",totalAscent/songCount);
       entity.set("average-descent-weeks",totalDescent/songCount);
-      console.log(slug,songCount,totalPeak,totalAscent,totalDescent);
-    }
+      entity.set("expected-score",expectedScore);
 
-    var entityScorer = entity.get();
-    scoring.scoreCollection.call(entityScorer);
-    entity.set("score", entityScorer.songAdjustedAverage);
+      var entityScorer = entity.get();
+      scoring.scoreCollection.call(entityScorer);
+      var artistScore = parseFloat(entityScorer.songAdjustedAverage);
+      entity.set("score", artistScore);
+      entity.set("trend", artistScore > expectedScore ? "leader" : artistScore < expectedScore ? "lagger" : "par");
+    }
 
     var collaborators = new Entity();
     for (var songSlug in entity.get("songs")) {
@@ -154,16 +161,20 @@ function _transform(snapshot) {
     entity.expand("members",artists,_shallow);
     entity.expand("xref",artists,_shallow);
 
+    var trends = { leader: "🔵", lagger: "🔴", par: "⚫️" };
+
     if (argv.v || argv.verbose) {
       util.log(
         chalk.blue(slug),
         entity.title(),
         display.count(entity.get("songs")),
-        display.number(entity.get("score"))
+        display.number(entity.get("score")),
+        trends[entity.get("trend")] || ""
       );
     }
 
     entities[slug] = entity.get();
+    //entities[slug].score = entities[slug].score || 0; // make sure it isn't undefined
 
   }
 
@@ -187,7 +198,7 @@ function _transform(snapshot) {
 
   var scores = {};
   for (var slug in entities) {
-    scores[slug] = entities[slug].songAdjustedAverage;
+    scores[slug] = entities[slug].score || null;
   }
 
   return {
