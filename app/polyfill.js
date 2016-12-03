@@ -69,6 +69,17 @@ if (!Array.prototype.includes) {
   };
 }
 
+if (!Array.prototype.median) {
+  Array.prototype.median = function() {
+    this.sort();
+    if (this.length % 2 == 0) {
+      return (this[this.length/2] + this[this.length/2-1]) / 2.0;
+    }
+    return this[(this.length-1)/2];
+  }
+}
+
+
 function titleTransform(entity) {
   return { slug: entity.instanceSlug, title: entity.title };
 }

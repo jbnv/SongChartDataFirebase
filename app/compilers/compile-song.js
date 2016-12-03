@@ -173,7 +173,10 @@ function _aggregate(songs) {
   return {
     averagePeak: peaksSum/(2*peaks.length-peaksSum),
     averageAscent: ascents.sum()/ascents.length,
-    averageDescent: descents.sum()/descents.length
+    averageDescent: descents.sum()/descents.length,
+    medianPeak: peaks.median(),
+    medianAscent: ascents.median(),
+    medianDescent: descents.median()
   };
 
 }
@@ -368,7 +371,7 @@ function _transform(snapshot) {
         display.number(entity.get("score"))
       );
     }
-    
+
     entities[slug] = entity.get();
   }
 
@@ -456,7 +459,6 @@ function _transform(snapshot) {
   for (var slug in entities) {
     scores[slug] = entities[slug].score;
   }
-
   return {
     "songs/compiled": entities,
     "songs/titles": titles,
@@ -471,7 +473,19 @@ function _transform(snapshot) {
     "songs/by-year": years.get(),
     "songs/by-month": months.get(),
     "songs/unscored": unscored,
-    "summary/songs/count": Object.keys(entities).length,
+    "summary/songs": {
+      "count": Object.keys(entities).length,
+      "average":{
+        "peak": aggregates.averagePeak,
+        "ascent-weeks": aggregates.averageAscent,
+        "descent-weeks": aggregates.averageDescent,
+      },
+      "median":{
+        "peak": aggregates.medianPeak,
+        "ascent-weeks": aggregates.medianAscent,
+        "descent-weeks": aggregates.medianDescent,
+      }
+    },
     "summary/decades": decadesSummary,
     "summary/years": yearsSummary
   }
