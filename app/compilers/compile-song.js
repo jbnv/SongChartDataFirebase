@@ -257,6 +257,10 @@ function _transform(snapshot) {
 
     entity.set("unscored",!entity.get("peak"));
 
+    if (!entity.get("peak")) entity.set("peak-calculated");
+    if (!entity.get("ascent-weeks")) entity.set("ascent-calculated");
+    if (!entity.get("descent-weeks")) entity.set("descent-calculated");
+
     entity.setDefault("peak",aggregates.averagePeak);
     entity.setDefault("ascent-weeks",aggregates.averageAscent);
     entity.setDefault("descent-weeks",aggregates.averageDescent);
