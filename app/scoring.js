@@ -320,6 +320,7 @@ function _distribute(songObject) {
   var totalScore = 0;
   for (var slug in songObject) {
     var song = songObject[slug];
+    if (!song) continue; // should never happen, but just in case
     songArray.push({
       "slug": slug,
       "peak": song.peak,
