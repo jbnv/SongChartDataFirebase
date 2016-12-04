@@ -20,7 +20,7 @@ require('./polyfill');
 
 ////////////////////////////////////////////////////////////////////////////////
 
-function _getSubset(allSongs) {
+function _getSubset(allSongs,median) {
 
   var scope = [];
   for (var i = 0; i < argv._.length; i++) {
@@ -73,7 +73,12 @@ function _getSubset(allSongs) {
   if (!Array.isArray(scope)) throw "Scope is not an array!";
 
   var subset = scope.reduce(function(prev,cur) {
-    prev[cur] = allSongs[cur]; return prev;
+    var song =  allSongs[cur];
+    if (!song.peak) song.peak = median.peak;
+    if (!song["ascent-weeks"]) song["ascent-weeks"] = median["ascent-weeks"];
+    if (!song["descent-weeks"]) song["descent-weeks"] = median["descent-weeks"];
+    prev[cur] = song;
+    return prev;
   }, {});
 
   if (argv.debug) {
@@ -123,11 +128,13 @@ module.exports = function() {
 
     return require('./data')(firebase).getBatch({
       "songs": "songs/compiled",
+      "median": "summary/songs/median"
     })
     .then(function(snapshot) {
       var allSongs = snapshot[0].val() || {},
+          median = snapshot[1].val() || {},
 
-          subset = _getSubset(allSongs),
+          subset = _getSubset(allSongs,median),
           transformed = transformFn(subset),
           subsetCount = Object.keys(subset).length,
           transformedCount = Object.keys(transformed).length;
