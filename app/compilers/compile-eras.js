@@ -27,7 +27,13 @@ function _transform(snapshot) {
 
       display     = require('../display'),
       scoring     = require('../scoring'),
-      transform   = require('../transform');
+      transform   = require('../transform'),
+
+      argv        = require("yargs")
+                      .alias('v','verbose').alias('d','debug')
+                      .boolean('verbose')
+                      .boolean('debug')
+                      .argv;
 
   util.log(chalk.magenta("compile-eras.js"));
 
@@ -166,10 +172,20 @@ function _transform(snapshot) {
 
   function _aggregate(firehash) {
     return transform.aggregateEra(firehash.map(function(slug,era) {
-      var keys = Object.keys(era);
+
+      var keys = Object.keys(era),
+          score = keys.map(function(key) { return era[key]; }).scoreAdjustedAverage();
+
+      if (argv.verbose) {
+        util.log(
+          chalk.blue(slug),
+          display.number(score)
+        );
+      }
+
       return {
         count: keys.length,
-        score: keys.map(function(key) { return era[key]; }).scoreAdjustedAverage(),
+        score: score,
         songs: era,
         topsong: keys.reduce(function(prev,cur) {
           if (!prev) return cur;
