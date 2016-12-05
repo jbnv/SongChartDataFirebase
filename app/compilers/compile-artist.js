@@ -3,11 +3,11 @@ var chalk       = require("chalk"),
 
     Entity      = require('firehash'),
 
+    argv        = require('../argv')();
     display     = require('../display'),
     scoring     = require('../scoring'),
     transform   = require('../transform'),
 
-    argv        = require("yargs").argv;
 
 require("../polyfill");
 
@@ -67,30 +67,38 @@ function _transform(snapshot) {
     var totalAscent = 0.0;
     var totalDescent = 0.0;
 
+    function _songPropertyValue(value) {
+      if (!value) return null;
+      if (typeof value !== "number") return null;
+      return value;
+    }
+
     var entitySongs = {};
     for (var songSlug in songsBy.get(slug) || {}) {
       var song = allSongs[songSlug];
       var role = allSongsRaw[songSlug].artists[slug];
       var scoreFactor = scoring.scoreFactor(role);
       if (!song) continue;
-      entitySongs[songSlug] = {
+      var newSong = {
         title: song.title,
         role: role,
         scoreFactor: scoreFactor,
         totalScore: song.score,
         score: song.score * scoreFactor,
-        peak: song.peak || null,
+        peak: _songPropertyValue(song.peak),
         debut: song.debut || null,
-        "ascent-weeks": song["ascent-weeks"] || null,
-        "descent-weeks": song["descent-weeks"] || null
+        "ascent-weeks": _songPropertyValue(song["ascent-weeks"]),
+        "descent-weeks": _songPropertyValue(song["descent-weeks"])
       }
+      entitySongs[songSlug] = newSong;
       songCount++;
-      totalPeak += parseFloat(song.peak || 0);
-      totalAscent += parseFloat(song["ascent-weeks"] || 0);
-      totalDescent += parseFloat(song["descent-weeks"] || 0);
+      totalPeak += parseFloat(newSong.peak || 0);
+      totalAscent += parseFloat(newSong["ascent-weeks"] || 0);
+      totalDescent += parseFloat(newSong["descent-weeks"] || 0);
     }
     entitySongs = scoring.sortAndRank(entitySongs);
     entity.set("songs",entitySongs);
+
 
     if (songCount) {
       var expectedScore = songMedianScore * Math.sqrt(songCount);
