@@ -1,22 +1,18 @@
-var firebase    = require("firebase"),
+var Promise     = require("firebase").Promise,
     chalk       = require("chalk"),
     util        = require("gulp-util"),
-    fbConfig    = require("../firebase-config");
+
+    argv        = require("./argv")();
 
 module.exports = function(typeSlug) {
 
   if (!typeSlug) {
-    return Firebase.Promise.reject("No type specified!");
+    return Promise.reject("No type specified!");
   }
 
   util.log(chalk.magenta("compile.js"),typeSlug);
 
-  // Initialize Firebase.
-  firebase.initializeApp(fbConfig.initConfig);
-
-  return firebase.auth().signInWithEmailAndPassword(fbConfig.email,fbConfig.password)
-
-  .then(function() {
+  return function(firebase) {
     var typeModule = require("./compilers/compile-"+typeSlug);
     var data = require('./data')(firebase);
 
@@ -24,19 +20,9 @@ module.exports = function(typeSlug) {
     .then(typeModule.transform)
     .then(data.setBatch)
     .then(function(outputs) {
-      if (!outputs) outputs = {};
-      if (!typeModule.entities) {
-        util.log(
-          chalk.red("ERROR"),
-          "'entities' output not specified."
-        );
-      }
-      if (!typeModule.errors) {
-        util.log(
-          chalk.red("ERROR"),
-          "'errors' output not specified."
-        );
-      }
+      if (!outputs) return Promise.resolve(true);
+      if (!typeModule.entities) { return Promise.reject("'entities' output not specified."); };
+      if (!typeModule.errors) { return Promise.reject("'errors' output not specified."); };
       util.log(
         "Compiled",
         chalk.green(Object.keys(outputs[typeModule.entities] || {}).length),
@@ -46,6 +32,6 @@ module.exports = function(typeSlug) {
       );
       return Promise.resolve(true);
     });
-  });
+  };
 
 };

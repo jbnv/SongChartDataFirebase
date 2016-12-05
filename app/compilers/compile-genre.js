@@ -19,6 +19,7 @@ function _transform(snapshot) {
 
       Entity      = require('firehash'),
 
+      argv        = require('../argv'),
       display     = require('../display'),
       scoring     = require('../scoring'),
       transform   = require('../transform');
@@ -60,14 +61,16 @@ function _transform(snapshot) {
 
     scoring.scoreCollection.call(entity);
 
-    util.log(
-      chalk.blue(slug),
-      entity.title,
-      display.count(entity.songs),
-      display.number(entity.songAdjustedAverage),
-      display.count(entity.artists),
-      display.number(entity.artistAdjustedAverage)
-    );
+    if (argv.v || argv.verbose) {
+      util.log(
+        chalk.blue(slug),
+        entity.title,
+        display.count(entity.songs),
+        display.number(entity.songAdjustedAverage),
+        display.count(entity.artists),
+        display.number(entity.artistAdjustedAverage)
+      );
+    }
 
     entities[slug] = entity;
 

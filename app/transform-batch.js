@@ -1,20 +1,14 @@
 var chalk       = require("chalk"),
-    firebase    = require("firebase"),
     q           = require("q"),
     util        = require("gulp-util"),
+    Promise     = require("firebase").Promise,
     yargs       = require('yargs'),
 
-    fbConfig    = require("../firebase-config"),
-
+    argv        = require("./argv")(),
     display     = require('./display'),
     scoring     = require('./scoring'),
-    songTools   = require('./tools/song'),
-
-    argv        = require("yargs")
-                    .alias('v','verbose').alias('d','debug')
-                    .boolean('verbose')
-                    .boolean('debug')
-                    .argv;
+    songTools   = require('./tools/song');
+    writeSong   = require('./writers/song');
 
 require('./polyfill');
 
@@ -105,26 +99,11 @@ module.exports = function() {
 
   var transformFn =  arguments[0].transformFn;
 
-  function _write(slug,song) {
-    if (!slug || !song) return;
-    var ref = firebase.database().ref("songs/raw").child(slug);
-    if (song.peak)
-      ref.child("peak").set(song.peak);
-    if (song["ascent-weeks"])
-      ref.child("ascent-weeks").set(song["ascent-weeks"]);
-    if (song["descent-weeks"])
-      ref.child("descent-weeks").set(song["descent-weeks"]);
-  }
-
   if (argv.debug) {
     util.log(chalk.yellow("DEBUG"));
   }
 
-  // Initialize Firebase.
-  firebase.initializeApp(fbConfig.initConfig);
-
-  firebase.auth().signInWithEmailAndPassword(fbConfig.email,fbConfig.password)
-  .then(function() {
+  return require("./firebase-app")(function(firebase) {
 
     return require('./data')(firebase).getBatch({
       "songs": "songs/compiled",
@@ -164,7 +143,7 @@ module.exports = function() {
           continue;
         }
 
-        _write(songSlug,after);
+        writeSong(firebase,songSlug,after);
 
         if (argv.debug || argv.verbose) {
           util.log(
@@ -188,8 +167,18 @@ module.exports = function() {
         "songs."
       );
 
-    }); // get data
+      return require('./compile')("song")(firebase);
+    })
+    .then(function() {
+      return require('./compile')("artist")(firebase);
+    })
+    .then(function() {
+      return require('./compile')("playlist")(firebase);
+    })
+    .then(function() {
+      return require('./compile')("eras")(firebase);
+    })
 
-  }); // authorize Firebase
+  }) // app
 
 }; //module.exports
