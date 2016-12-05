@@ -267,7 +267,6 @@ function _transform(snapshot) {
 
     var songScored = scoring.scoreSong(entity.get());
     entity.set("score",songScored.score);
-    entity.set("duration",songScored.duration);
 
     // Map singular fields to corresponding plurals.
     entity.fix("genre","genres");
@@ -368,11 +367,38 @@ function _transform(snapshot) {
     var postvalidateMessages = _postvalidate(slug,entity) || {};
     entity.addMessage(postvalidateMessages);
 
-    if (argv.v || argv.verbose) {
+    var peak = entity.get("peak"), ascent = entity.get("ascent-weeks"), descent = entity.get("descent-weeks"),
+        isPeakError = peak <= 0 || peak > 1,
+        isPeakWarning = false,
+        isAscentError =  ascent <= 0,
+        isAscentWarning = false,
+        isDescentError =  descent <= 0,
+        isDescentWarning =  descent < (ascent/2);
+
+    if (
+      argv.debug || argv.verbose
+      || isPeakError || isAscentError || isDescentError
+      || isPeakWarning || isAscentWarning || isDescentWarning
+    ) {
       util.log(
         chalk.blue(slug),
         entity.title(),
-        display.number(entity.get("score"))
+        display.number(entity.get("score")),
+        display.number(peak,{
+          isError: isPeakError,
+          isWarning: isPeakWarning,
+          isCalculated: entity.get("peak-calculated")
+        }),
+        display.number(ascent,{
+          isError: isAscentError,
+          isWarning: isAscentWarning,
+          isCalculated: entity.get("ascent-calculated")
+        }),
+        display.number(descent,{
+          isError: isDescentError,
+          isWarning: isDescentWarning,
+          isCalculated: entity.get("descent-calculated")
+        })
       );
     }
 
