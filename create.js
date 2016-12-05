@@ -1,9 +1,7 @@
-var firebase    = require("firebase"),
-    chalk       = require("chalk"),
+var chalk       = require("chalk"),
+    Promise     = require("firebase").Promise,
     util        = require("gulp-util"),
-    yargs       = require('yargs'),
-
-    fbConfig    = require("./firebase-config");
+    yargs       = require('yargs');
 
 var typeSlug = process.argv[2];
 if (!typeSlug) {
@@ -11,11 +9,7 @@ if (!typeSlug) {
   return;
 }
 
-firebase.initializeApp(fbConfig.initConfig);
-
-firebase.auth().signInWithEmailAndPassword(fbConfig.email,fbConfig.password)
-
-.then(function() {
+require('./app/firebase-app')(function(firebase) {
   var model = require("./app/models/"+typeSlug);
   var instance = new model(yargs);
   var route = instance.typeSlugPlural+"/raw/"+instance.instanceSlug;
