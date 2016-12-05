@@ -163,7 +163,7 @@ function _transform(snapshot) {
 
     var trends = { leader: "🔵", lagger: "🔴", par: "⚫️" };
 
-    if (argv.v || argv.verbose) {
+    if (argv.verbose) {
       util.log(
         chalk.blue(slug),
         entity.title(),
@@ -180,16 +180,16 @@ function _transform(snapshot) {
 
   /* Calculate song rankings on all terms.*/
 
-  util.log("Ranking by origin.");
+  if (argv.debug || argv.verbose) { util.log("Ranking by origin."); }
   scoring.rankEntities(entities,origins.get(),"origin");
 
-  util.log("Ranking by genre.");
+  if (argv.debug || argv.verbose) { util.log("Ranking by genre."); }
   scoring.rankEntities(entities,genres.get(),"genre");
 
-  util.log("Ranking by tag.");
+  if (argv.debug || argv.verbose) { util.log("Ranking by tag."); }
   scoring.rankEntities(entities,tags.get(),"tag");
 
-  util.log("Ranking by role.");
+  if (argv.debug || argv.verbose) { util.log("Ranking by role."); }
   scoring.rankEntities(entities,roles.get(),"role");
 
   util.log("Artist processing complete.");

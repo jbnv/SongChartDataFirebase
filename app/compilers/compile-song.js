@@ -421,25 +421,25 @@ function _transform(snapshot) {
 
   /* Calculate song rankings on all terms.*/
 
-  util.log("Ranking by artist.");
+  if (argv.debug || argv.verbose) { util.log("Ranking by artist."); }
   scoring.rankEntities(entities,artists.get(),"artist");
 
-  util.log("Ranking by genre.");
+  if (argv.debug || argv.verbose) { util.log("Ranking by genre."); }
   scoring.rankEntities(entities,genres.get(),"genre");
 
-  util.log("Ranking by playlist.");
+  if (argv.debug || argv.verbose) { util.log("Ranking by playlist."); }
   scoring.rankEntities(entities,playlists.get(),"playlist");
 
-  util.log("Ranking by source.");
+  if (argv.debug || argv.verbose) { util.log("Ranking by source."); }
   scoring.rankEntities(entities,sources.get(),"source");
 
-  util.log("Ranking by decade.");
+  if (argv.debug || argv.verbose) { util.log("Ranking by decade."); }
   scoring.rankEntities(entities,decades.get(),"decade");
 
-  util.log("Ranking by year.");
+  if (argv.debug || argv.verbose) { util.log("Ranking by year."); }
   scoring.rankEntities(entities,years.get(),"year");
 
-  util.log("Ranking all.");
+  if (argv.debug || argv.verbose) { util.log("Ranking all."); }
   scoring.rankEntities(entities);
 
   function _processSongs(slug,songs) {
@@ -452,13 +452,13 @@ function _transform(snapshot) {
     return {count: era.songCount, score: era.songAdjustedAverage};
   }
 
-  util.log("Summarizing decades.");
+  if (argv.debug || argv.verbose) { util.log("Summarizing decades."); }
   var decadesSummary = transform.aggregateEra(decades.map(_processSongs));
 
-  util.log("Summarizing years.");
+  if (argv.debug || argv.verbose) { util.log("Summarizing years."); }
   var yearsSummary = transform.aggregateEra(years.map(_processSongs));
 
-  util.log("Collecting scores.");
+  if (argv.debug || argv.verbose) { util.log("Collecting scores."); }
   var scores = {};
   for (var slug in entities) {
     scores[slug] = entities[slug].score;
