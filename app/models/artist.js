@@ -27,6 +27,7 @@ function Artist(yargs) {
 }
 
 Artist.prototype.typeSlug = "artist";
+Artist.prototype.typeSlugPlural = "artists";
 Artist.prototype.typeNoun = "artist";
 
 Artist.prototype.parameters = {
